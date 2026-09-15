@@ -81,7 +81,7 @@
   <section class="card">
     <h2>{{ t('stats_countries_heading') }}</h2>
     <table class="modules"><tbody>
-      {% for row in stats.countries %}<tr><td>{{ row.country or t('stats_unknown') }}</td><td class="num">{{ row.n }}</td></tr>{% endfor %}
+      {% for row in stats.countries if row.country %}<tr><td>{{ row.country }}</td><td class="num">{{ row.n }}</td></tr>{% endfor %}
     </tbody></table>
   </section>
 </div>
