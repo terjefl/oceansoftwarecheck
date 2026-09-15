@@ -23,7 +23,9 @@ from pathlib import Path
 import yaml
 from fastapi import Request
 
-USERS_PATH = Path(os.environ.get("MARLIN_ADMIN_USERS_PATH", "/config/admin_users.yaml"))
+from .config import env
+
+USERS_PATH = Path(env("ADMIN_USERS_PATH", "/config/admin_users.yaml"))
 
 # The ONE request header trusted to carry the real client IP (used for rate
 # limits, login lockout, the audit log and the daily usage hash). Behind
@@ -32,13 +34,13 @@ USERS_PATH = Path(os.environ.get("MARLIN_ADMIN_USERS_PATH", "/config/admin_users
 # to a client-supplied X-Forwarded-For, so its first element is attacker
 # controlled. Set the variable to an empty string to use the socket address
 # (no proxy in front).
-CLIENT_IP_HEADER = os.environ.get("MARLIN_CLIENT_IP_HEADER", "cf-connecting-ip").strip().lower()
+CLIENT_IP_HEADER = env("CLIENT_IP_HEADER", "cf-connecting-ip").strip().lower()
 
 PBKDF2_ITERATIONS = 600_000
 MAX_FAILED = 10
 FAILED_WINDOW = 15 * 60
 
-SESSION_COOKIE = "marlin_admin"
+SESSION_COOKIE = "osc_admin"
 SESSION_IDLE_SECONDS = 8 * 3600       # logged out after 8 h without activity
 SESSION_MAX_SECONDS = 24 * 3600       # ...and after 24 h regardless
 

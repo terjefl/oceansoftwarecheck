@@ -1,9 +1,9 @@
 # Local development. The production compose file lives in the operator's
 # infrastructure repo.
 services:
-  marlin:
+  oceansoftwarecheck:
     build: .
-    image: marlin-check:dev
+    image: oceansoftwarecheck:dev
     ports:
       - "8000:8000"
     volumes:
@@ -14,4 +14,4 @@ services:
     environment:
       TZ: Europe/Oslo
       # Local dev runs over plain http, so the admin session cookie must not be Secure
-      MARLIN_COOKIE_SECURE: "0"
+      OSC_COOKIE_SECURE: "0"

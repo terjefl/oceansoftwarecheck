@@ -2,7 +2,7 @@
 """Manage admin users directly in the database — the rescue path when nobody
 can log in (lost MFA device, forgotten password).
 
-Run on the host, inside the container or with MARLIN_DATA_DIR pointing at the
+Run on the host, inside the container or with OSC_DATA_DIR pointing at the
 data directory:
 
     python3 scripts/manage_users.py list
@@ -17,13 +17,13 @@ Passwords are prompted for (not echoed). Every action is written to the audit lo
 
 import argparse
 import getpass
-import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from app.auth import hash_password
-from app.db import Database
+from app.config import env
+from app.db import DB_FILENAME, Database, migrate_database_name
 
 
 def _password() -> str:
@@ -37,7 +37,7 @@ def _password() -> str:
 
 def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--data-dir", default=os.environ.get("MARLIN_DATA_DIR", "./data"))
+    parser.add_argument("--data-dir", default=env("DATA_DIR", "./data"))
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("list")
     add = sub.add_parser("add")
@@ -50,7 +50,8 @@ def main(argv=None) -> None:
     set_role.add_argument("role", choices=Database.ROLES)
     args = parser.parse_args(argv)
 
-    db = Database(Path(args.data_dir) / "marlin.sqlite3")
+    migrate_database_name(Path(args.data_dir))
+    db = Database(Path(args.data_dir) / DB_FILENAME)
     if args.cmd == "list":
         for u in db.list_users():
             mfa = u["totp_confirmed_at"][:10] if u["totp_confirmed_at"] else "no MFA"

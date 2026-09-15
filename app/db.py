@@ -8,6 +8,7 @@ analysis. Earlier rows come from the consent period and are kept.
 from __future__ import annotations
 
 import hashlib
+import os
 import secrets
 import sqlite3
 import time
@@ -257,6 +258,24 @@ def _report_from_rows(vin: str, rows, report_date: str = "") -> ParsedReport:
         ))
     meta = {"report_date": report_date} if report_date else {}
     return ParsedReport(vin=vin, modules=modules, meta=meta)
+
+
+DB_FILENAME = "oceansoftwarecheck.sqlite3"
+_OLD_DB_FILENAME = "marlin.sqlite3"
+
+
+def migrate_database_name(data_dir: Path) -> bool:
+    """Project rename 2026-09-16: moves marlin.sqlite3 (and its WAL/SHM
+    side files) to oceansoftwarecheck.sqlite3 when the new file does not
+    exist yet. Returns True when something was moved."""
+    new, old = data_dir / DB_FILENAME, data_dir / _OLD_DB_FILENAME
+    if new.exists() or not old.exists():
+        return False
+    for suffix in ("", "-wal", "-shm"):
+        src = Path(str(old) + suffix)
+        if src.exists():
+            os.replace(src, Path(str(new) + suffix))
+    return True
 
 
 class Database:
@@ -973,7 +992,7 @@ class Database:
     SETTING_DEFAULTS: ClassVar[dict[str, str]] = {
         "workorder_enabled": "1",
         "result_mail_enabled": "1",
-        "smtp_host": "",      # seeded from MARLIN_SMTP_* at startup (seed_settings)
+        "smtp_host": "",      # seeded from OSC_SMTP_* at startup (seed_settings)
         "smtp_port": "587",
         "mail_from": "",
         "service_partner_url": "https://fiskeroa.com/service/",
@@ -981,7 +1000,7 @@ class Database:
 
     def seed_settings(self, values: dict[str, str]) -> None:
         """Writes values for keys that have never been saved (used to carry the
-        MARLIN_SMTP_* environment variables into the admin-controlled settings)."""
+        OSC_SMTP_* environment variables into the admin-controlled settings)."""
         with self._connect() as conn:
             for key, value in values.items():
                 if value:

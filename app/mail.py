@@ -1,22 +1,23 @@
 """Outgoing e-mail through an SMTP relay (Google Workspace's smtp-relay.gmail.com,
 unauthenticated from a registered IP, STARTTLS). The relay is configured in the
-admin console (settings smtp_host, smtp_port, mail_from); the MARLIN_SMTP_*
+admin console (settings smtp_host, smtp_port, mail_from); the OSC_SMTP_*
 environment variables only seed those settings on first start. No host = off.
 Addresses are used for the one message and never stored."""
 
 from __future__ import annotations
 
-import os
 import re
 import smtplib
 import ssl
 from dataclasses import dataclass
 from email.message import EmailMessage
 
+from .config import env
+
 ENV_DEFAULTS = {
-    "smtp_host": os.environ.get("MARLIN_SMTP_HOST", "").strip(),
-    "smtp_port": os.environ.get("MARLIN_SMTP_PORT", "587").strip() or "587",
-    "mail_from": os.environ.get("MARLIN_MAIL_FROM", "Ocean Software Check <noreply@oceansoftwarecheck.com>").strip(),
+    "smtp_host": env("SMTP_HOST", "").strip(),
+    "smtp_port": env("SMTP_PORT", "587").strip() or "587",
+    "mail_from": env("MAIL_FROM", "Ocean Software Check <noreply@oceansoftwarecheck.com>").strip(),
 }
 
 _ADDRESS_RE = re.compile(r"^[^@\s]{1,64}@[^@\s.]+(\.[^@\s.]+)+$")

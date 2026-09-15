@@ -12,8 +12,8 @@ FIXTURE = Path(__file__).parent / "fixtures" / "olp_report.txt"
 
 @pytest.fixture()
 def client(tmp_path, monkeypatch):
-    monkeypatch.setenv("MARLIN_DATA_DIR", str(tmp_path / "data"))
-    monkeypatch.setenv("MARLIN_UPLOADS_DIR", str(tmp_path / "data" / "uploads"))
+    monkeypatch.setenv("OSC_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("OSC_UPLOADS_DIR", str(tmp_path / "data" / "uploads"))
     from app import main
 
     importlib.reload(main)
@@ -288,9 +288,9 @@ def client_with_config(tmp_path, monkeypatch):
     config = tmp_path / "config"
     config.mkdir()
     shutil.copy(Path(__file__).parent.parent / "requirements.example.yaml", config / "requirements.yaml")
-    monkeypatch.setenv("MARLIN_DATA_DIR", str(tmp_path / "data"))
-    monkeypatch.setenv("MARLIN_UPLOADS_DIR", str(tmp_path / "data" / "uploads"))
-    monkeypatch.setenv("MARLIN_REQUIREMENTS_PATH", str(config / "requirements.yaml"))
+    monkeypatch.setenv("OSC_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("OSC_UPLOADS_DIR", str(tmp_path / "data" / "uploads"))
+    monkeypatch.setenv("OSC_REQUIREMENTS_PATH", str(config / "requirements.yaml"))
     from app import main
 
     importlib.reload(main)
@@ -325,9 +325,9 @@ def test_corrupt_requirements_at_startup_gives_503_not_500(tmp_path, monkeypatch
     config = tmp_path / "config"
     config.mkdir()
     (config / "requirements.yaml").write_text("not: [valid")
-    monkeypatch.setenv("MARLIN_DATA_DIR", str(tmp_path / "data"))
-    monkeypatch.setenv("MARLIN_UPLOADS_DIR", str(tmp_path / "data" / "uploads"))
-    monkeypatch.setenv("MARLIN_REQUIREMENTS_PATH", str(config / "requirements.yaml"))
+    monkeypatch.setenv("OSC_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("OSC_UPLOADS_DIR", str(tmp_path / "data" / "uploads"))
+    monkeypatch.setenv("OSC_REQUIREMENTS_PATH", str(config / "requirements.yaml"))
     from app import main
 
     importlib.reload(main)

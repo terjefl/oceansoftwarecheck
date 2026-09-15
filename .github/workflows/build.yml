@@ -40,11 +40,11 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/marlin-check:latest
-            ghcr.io/${{ github.repository_owner }}/marlin-check:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/oceansoftwarecheck:latest
+            ghcr.io/${{ github.repository_owner }}/oceansoftwarecheck:${{ github.sha }}
 
   deploy:
-    # Tell Portainer to re-pull :latest and redeploy the `marlin` git stack.
+    # Tell Portainer to re-pull :latest and redeploy the `oceansoftwarecheck` git stack.
     # The secret holds the stack's webhook URL (Portainer -> stack -> webhook).
     needs: build
     runs-on: ubuntu-latest

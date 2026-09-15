@@ -244,7 +244,7 @@ over time, fleet movement, usage count), Activity log (`/admin/log`), Users and 
   chunked read up to the limit, PDFs over 20 pages rejected before text
   extraction; parsing runs in the threadpool so a slow PDF never blocks other
   visitors. Rate limit of 10 uploads per minute per IP.
-- The client IP comes from ONE trusted header (`MARLIN_CLIENT_IP_HEADER`,
+- The client IP comes from ONE trusted header (`OSC_CLIENT_IP_HEADER`,
   default `cf-connecting-ip`). `X-Forwarded-For` is never used: Cloudflare
   appends to a client-supplied value, so its first element is attacker
   controlled.
@@ -283,25 +283,34 @@ changing `requirements.txt`, regenerate the lock with
 
 ## Environment variables
 
+All variables are read as `OSC_<NAME>`. The pre-rename `MARLIN_<NAME>` names
+still work (with a deprecation warning in the log) so a deployment can switch
+at its own pace.
+
 | Variable | Default in code | In the Docker image | Description |
 |---|---|---|---|
-| `MARLIN_DATA_DIR` | `./data` | `/data` | SQLite database (`marlin.sqlite3`) |
-| `MARLIN_UPLOADS_DIR` | `./data/uploads` | `/data/uploads` | Stored report files |
-| `MARLIN_REQUIREMENTS_PATH` | `./requirements.example.yaml` | `/config/requirements.yaml` | The requirements file |
-| `MARLIN_ADMIN_USERS_PATH` | `/config/admin_users.yaml` | same | Admin users (PBKDF2 hashes) |
-| `MARLIN_COOKIE_SECURE` | `1` | same | Mark the admin session cookie `Secure`. Set to `0` only for local development over plain http (compose.yml does). |
-| `MARLIN_PUBLIC_URL` | (empty) | same | Absolute base for the permanent vehicle links, e.g. `https://oceansoftwarecheck.com`. Empty = derived from `X-Forwarded-Proto` and `Host`, which the Cloudflare tunnel provides. |
-| `MARLIN_SMTP_HOST` | (empty) | same | Optional seed for the SMTP relay setting on first start (e.g. `smtp-relay.gmail.com`). The relay is otherwise configured in the admin console under Settings. |
-| `MARLIN_SMTP_PORT` | `587` | same | Optional seed for the relay port setting. |
-| `MARLIN_MAIL_FROM` | `Ocean Software Check <noreply@oceansoftwarecheck.com>` | same | Optional seed for the sender setting; must belong to a domain the relay accepts. |
-| `MARLIN_MAX_HEAVY_JOBS` | `4` | same | How many report analyses and PDF renderings may run at once; further requests wait in line. Protects the container's memory limit under a burst of uploads. |
-| `MARLIN_CLIENT_IP_HEADER` | `cf-connecting-ip` | same | The one request header trusted for the client IP (rate limits, login lockout, audit log, usage hash). Set to empty to use the socket address when no proxy is in front. |
+| `OSC_DATA_DIR` | `./data` | `/data` | SQLite database (`oceansoftwarecheck.sqlite3`; a `marlin.sqlite3` from before the rename is moved automatically on first start) |
+| `OSC_UPLOADS_DIR` | `./data/uploads` | `/data/uploads` | Stored report files |
+| `OSC_REQUIREMENTS_PATH` | `./requirements.example.yaml` | `/config/requirements.yaml` | The requirements file |
+| `OSC_ADMIN_USERS_PATH` | `/config/admin_users.yaml` | same | Admin users (PBKDF2 hashes) |
+| `OSC_COOKIE_SECURE` | `1` | same | Mark the admin session cookie `Secure`. Set to `0` only for local development over plain http (compose.yml does). |
+| `OSC_PUBLIC_URL` | (empty) | same | Absolute base for the permanent vehicle links, e.g. `https://oceansoftwarecheck.com`. Empty = derived from `X-Forwarded-Proto` and `Host`, which the Cloudflare tunnel provides. |
+| `OSC_SMTP_HOST` | (empty) | same | Optional seed for the SMTP relay setting on first start (e.g. `smtp-relay.gmail.com`). The relay is otherwise configured in the admin console under Settings. |
+| `OSC_SMTP_PORT` | `587` | same | Optional seed for the relay port setting. |
+| `OSC_MAIL_FROM` | `Ocean Software Check <noreply@oceansoftwarecheck.com>` | same | Optional seed for the sender setting; must belong to a domain the relay accepts. |
+| `OSC_MAX_HEAVY_JOBS` | `4` | same | How many report analyses and PDF renderings may run at once; further requests wait in line. Protects the container's memory limit under a burst of uploads. |
+| `OSC_CLIENT_IP_HEADER` | `cf-connecting-ip` | same | The one request header trusted for the client IP (rate limits, login lockout, audit log, usage hash). Set to empty to use the socket address when no proxy is in front. |
 
 ## Build and deploy
 
+Renamed 2026-09-16 from `marlin-check` to `oceansoftwarecheck`: repository,
+image, Portainer stack, environment variables (`OSC_*`), database file, admin
+session cookie (`osc_admin`, so every admin logs in again once) and CSV file
+names. The old repository URL redirects.
+
 GitHub Actions (`.github/workflows/build.yml`, actions pinned to commit SHAs)
 runs ruff and the test suite, builds and publishes
-`ghcr.io/terjefl/marlin-check` (`latest` + git SHA) on every push to `main`,
+`ghcr.io/terjefl/oceansoftwarecheck` (`latest` + git SHA) on every push to `main`,
 and then calls a Portainer stack webhook (repo secret `PORTAINER_WEBHOOK_URL`)
 that re-pulls the image and recreates the container. A push is live about a
 minute after a green build. The deploy step is a no-op when the secret is
@@ -315,7 +324,7 @@ Cloudflare's `CF-IPCountry` header and degrade gracefully without it.
 Production runs as a Portainer git stack behind a Cloudflare Tunnel; the
 compose file lives in the operator's infrastructure repo.
 
-Heavy work (PDF parsing, WeasyPrint) is capped at `MARLIN_MAX_HEAVY_JOBS`
+Heavy work (PDF parsing, WeasyPrint) is capped at `OSC_MAX_HEAVY_JOBS`
 concurrent jobs (default 4); a burst of uploads queues rather than fanning out
 over the threadpool. Measured on a laptop: ~0.12 s per PDF analysis, 40
 parallel uploads complete in ~5 s with no errors.
@@ -353,7 +362,7 @@ passkey counts as the second factor instead of a TOTP code on
 a passkey"), which creates an anonymous pending session that is promoted once
 the signature verifies. A passkey alone satisfies the MFA requirement; the only
 remaining second factor cannot be removed. The relying-party id is the site's
-host name (`MARLIN_PUBLIC_URL` or the forwarded host), so passkeys registered
+host name (`OSC_PUBLIC_URL` or the forwarded host), so passkeys registered
 on one domain do not work on another. The challenge is stored on the session
 row and consumed once; sign counts are tracked. All JavaScript is in
 `static/app.js` (CSP-compliant); the JSON endpoints require `Sec-Fetch-Site:

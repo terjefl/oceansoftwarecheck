@@ -23,10 +23,10 @@ def client(tmp_path, monkeypatch):
         f"users:\n  terje: {hash_password('hemmelig123')}\n"
         f"  styremedlem: {hash_password('ogsåhemmelig')}\n"
     )
-    monkeypatch.setenv("MARLIN_DATA_DIR", str(tmp_path / "data"))
-    monkeypatch.setenv("MARLIN_UPLOADS_DIR", str(tmp_path / "data" / "uploads"))
-    monkeypatch.setenv("MARLIN_REQUIREMENTS_PATH", str(config / "requirements.yaml"))
-    monkeypatch.setenv("MARLIN_ADMIN_USERS_PATH", str(config / "admin_users.yaml"))
+    monkeypatch.setenv("OSC_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("OSC_UPLOADS_DIR", str(tmp_path / "data" / "uploads"))
+    monkeypatch.setenv("OSC_REQUIREMENTS_PATH", str(config / "requirements.yaml"))
+    monkeypatch.setenv("OSC_ADMIN_USERS_PATH", str(config / "admin_users.yaml"))
 
     import app.auth as auth_module
     from app import main
@@ -94,7 +94,7 @@ def test_admin_requires_login(client):
         response = _login(c, user, pw)
         assert response.status_code == 401
         assert "Invalid username or password" in response.text
-        assert "marlin_admin" not in response.cookies
+        assert "osc_admin" not in response.cookies
     assert c.get("/admin", follow_redirects=False).status_code == 303
 
 
@@ -105,7 +105,7 @@ def test_login_sets_cookie_and_page_renders_for_both_users(client):
                           follow_redirects=False, headers={"CF-Connecting-IP": "203.0.113.9"})
         assert response.status_code == 303 and response.headers["location"] == "/admin/login/code?next=/admin"
         cookie = response.headers["set-cookie"]
-        assert "marlin_admin=" in cookie
+        assert "osc_admin=" in cookie
         assert "HttpOnly" in cookie and "Secure" in cookie and "SameSite=lax" in cookie.replace("Lax", "lax")
         assert "Path=/admin" in cookie
         assert c.get("/admin", follow_redirects=False).headers["location"].startswith("/admin/login/code")  # code still owed
@@ -766,7 +766,7 @@ def test_passkey_registration_second_factor_and_passwordless_login(client, monke
     # Passwordless: no session at all, the discoverable passkey identifies the user
     other = TestClient(main.app, base_url="https://testserver")
     opts = other.post("/admin/login/passkey/options", json={}, headers={"Sec-Fetch-Site": "same-origin"})
-    assert opts.status_code == 200 and "marlin_admin=" in opts.headers["set-cookie"] and not opts.json().get("allowCredentials")
+    assert opts.status_code == 200 and "osc_admin=" in opts.headers["set-cookie"] and not opts.json().get("allowCredentials")
     assert other.get("/admin", follow_redirects=False).status_code == 303  # still only pending
     result = other.post("/admin/login/passkey/verify", json={"credential": {"id": "cred-one"}}, headers={"Sec-Fetch-Site": "same-origin"})
     assert result.status_code == 200 and result.json()["next"] == "/admin"

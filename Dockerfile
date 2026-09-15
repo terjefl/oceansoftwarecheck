@@ -7,7 +7,7 @@ RUN apt-get update \
         libcairo2 libgdk-pixbuf-2.0-0 shared-mime-info fonts-dejavu-core curl \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /srv/marlin
+WORKDIR /srv/oceansoftwarecheck
 
 # requirements.lock is generated from requirements.txt with
 #   uv pip compile requirements.txt --python-version 3.12 --python-platform linux --generate-hashes -o requirements.lock
@@ -17,16 +17,16 @@ RUN pip install --no-cache-dir --require-hashes -r requirements.lock
 COPY app/ ./app/
 COPY requirements.example.yaml .
 
-RUN useradd --create-home --uid 1000 marlin \
+RUN useradd --create-home --uid 1000 osc \
     && mkdir -p /data /config \
     && cp requirements.example.yaml /config/requirements.yaml \
-    && chown -R marlin:marlin /srv/marlin /data /config
+    && chown -R osc:osc /srv/oceansoftwarecheck /data /config
 
-USER marlin
+USER osc
 
-ENV MARLIN_DATA_DIR=/data \
-    MARLIN_UPLOADS_DIR=/data/uploads \
-    MARLIN_REQUIREMENTS_PATH=/config/requirements.yaml
+ENV OSC_DATA_DIR=/data \
+    OSC_UPLOADS_DIR=/data/uploads \
+    OSC_REQUIREMENTS_PATH=/config/requirements.yaml
 
 EXPOSE 8000
 

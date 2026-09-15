@@ -44,7 +44,7 @@ def _old_database(path: Path, report_name: str, vin: str) -> None:
 
 
 def test_old_database_is_migrated_and_backfilled_by_reevaluation(tmp_path):
-    path = tmp_path / "marlin.sqlite3"
+    path = tmp_path / "oceansoftwarecheck.sqlite3"
     _old_database(path, "olp_report_22_full.txt", "VCF1ZBE20PG099997")
 
     db = Database(path)  # migration runs here
@@ -254,3 +254,34 @@ def test_reevaluate_reparses_stored_file(tmp_path):
     bcm = conn.execute("SELECT version, extracted, status FROM module_readings WHERE code = 'BCM'").fetchone()
     assert (bcm["version"], bcm["extracted"], bcm["status"]) == ("BCM395021", 21, "outdated")
     assert conn.execute("SELECT outcome FROM submissions").fetchone()[0] == "zebra_21"
+
+
+def test_database_file_is_renamed_on_startup(tmp_path):
+    """Project rename: marlin.sqlite3 (with WAL side files) moves to
+    oceansoftwarecheck.sqlite3 the first time the app starts; a second call
+    is a no-op, and an existing new file is never overwritten."""
+    from app.db import DB_FILENAME, migrate_database_name
+
+    old = tmp_path / "marlin.sqlite3"
+    _old_database(old, "olp_report.txt", "VCF1ZBE20PG099999")
+    (tmp_path / "marlin.sqlite3-wal").write_bytes(b"")
+    assert migrate_database_name(tmp_path) is True
+    assert not old.exists() and (tmp_path / DB_FILENAME).exists() and (tmp_path / (DB_FILENAME + "-wal")).exists()
+    assert migrate_database_name(tmp_path) is False
+    conn = sqlite3.connect(tmp_path / DB_FILENAME)
+    assert conn.execute("SELECT COUNT(*) FROM submissions").fetchone()[0] == 1
+    old.write_bytes(b"stale")  # an old file reappearing must not clobber the live one
+    assert migrate_database_name(tmp_path) is False and (tmp_path / DB_FILENAME).stat().st_size > 5
+
+
+def test_env_prefers_osc_and_falls_back_to_marlin(monkeypatch):
+    from app.config import env
+
+    monkeypatch.delenv("OSC_THING", raising=False)
+    monkeypatch.setenv("MARLIN_THING", "old")
+    assert env("THING", "d") == "old"
+    monkeypatch.setenv("OSC_THING", "new")
+    assert env("THING", "d") == "new"
+    monkeypatch.delenv("OSC_THING")
+    monkeypatch.delenv("MARLIN_THING")
+    assert env("THING", "d") == "d"
