@@ -32,8 +32,8 @@ car's control modules meet the minimum software levels required for the
 - Repeat uploads of the same VIN show what changed since the previous report
   (outcome and every control unit whose Supplier SW Version differs); the
   permanent link warns when the report is older than 60 days.
-- A checklist PDF for service providers and FOA Advanced Installers (`/vehicle/<key>/workorder`,
-  `/vehicle/<key>/workorder`): the modules to update in the recommended order
+- A checklist PDF for service providers and FOA Advanced Installers
+  (`/vehicle/<key>/workorder`): the modules to update in the recommended order
   (below 2.1 first, then below 2.2), current and needed version, the Marlin
   package for Marlin cars, the ESP/iBooster and multi-step notes, and a
   sign-off line. Offered only when there is something to update, and only
@@ -90,8 +90,10 @@ app/
   auth.py       Credentials (PBKDF2), login lockout, TOTP helpers, trusted client-IP header
   passkeys.py   WebAuthn (passkeys) wrapper around py_webauthn
   i18n.py       Language negotiation + JSON dictionaries in app/locales/
-  templates/    Jinja2: base/index/result/how/stats/privacy/admin (overview, requirements, settings, analytics, log)/admin_fleet/
-                admin_vehicle/admin_login/pdf
+  templates/    Jinja2: base, index, result (+ _result_body), how, stats, privacy; admin pages
+                (overview, requirements, settings, analytics, log, fleet, vehicle, progress,
+                users, profile, login, login_code) with _admin_nav and _fleet_tiles; pdf and
+                workorder (standalone, rendered by WeasyPrint with their own styles)
   static/       style.css (dark theme after fiskeroa.com, light variant via prefers-color-scheme)
                 and app.js (all page JS; no inline scripts, CSP-enforced), fonts/ (self-hosted
                 Titillium Web, OFL), img/ (FOA logo, see img/SOURCES.md), favicon (generated "OSC" mark),
@@ -105,6 +107,22 @@ requirements.example.yaml   the requirements spec with field documentation
 requirements.txt / .lock    loose spec / pinned+hashed set used by Docker and CI
 pyproject.toml              ruff configuration
 ```
+
+## Look and feel
+
+Since 2026-09-16 the portal follows the association's website (fiskeroa.com):
+near-black background (#181818, cards #212121, header #111), white text,
+self-hosted Titillium Web, FOA orange (#f78e1e) as the accent under the active
+navigation item and blue (#1863dc) buttons. A light palette is applied
+automatically when the visitor's system prefers it (`prefers-color-scheme`;
+header and footer stay dark), and a print palette makes `/stats` and result
+pages readable on paper. Everything is driven by CSS custom properties at the
+top of `static/style.css`; the outcome colours (Marlin blue, full 2.2 green,
+clean 2.1 purple, 2.2 zebra orange, 2.1 zebra magenta) keep their hues in both
+themes. The header shows the FOA community logo; the favicon is a generated
+"OSC" mark. The layout is responsive (breakpoints at 1000 px for the header
+and 760 px for the rest) with 44 px touch targets. The PDF and work-order
+documents are unchanged by the theme.
 
 ## Status
 
@@ -206,12 +224,12 @@ register (`/admin/fleet`), Analytics (`/admin/analytics`: Marlin cars split by f
 Marlin package, what holds the split cars back, every control unit, uploads
 over time, fleet movement, usage count), Activity log (`/admin/log`), Users and My account.
 
-- **Login:** form login at `/admin/login`. Users live in
-  `/config/admin_users.yaml` (see `admin_users.example.yaml`) as
-  `username: pbkdf2-hash` – create hashes with
-  `python3 scripts/hash_password.py`; the file is read on every login, so
-  adding a user needs no restart. Failed attempts are locked out after 10 per
-  15 min, per IP and per username. Sessions live in SQLite (only a hash of
+- **Login:** form login at `/admin/login`, then a second factor (TOTP code
+  or passkey; see "Admin users, roles and MFA"). Users live in the database
+  and are managed on `/admin/users`; `/config/admin_users.yaml` (see
+  `admin_users.example.yaml`, hashes from `python3 scripts/hash_password.py`)
+  only seeds the first start and serves as a rescue entrance. Failed attempts
+  are locked out after 10 per 15 min, per IP and per username. Sessions live in SQLite (only a hash of
   the cookie token is stored) behind an `HttpOnly; Secure; SameSite=Lax`
   cookie scoped to `/admin`, expire after 8 h idle or 24 h total, and "Log
   out" deletes them. Admin POSTs are CSRF-protected three ways: the SameSite
@@ -331,11 +349,11 @@ concurrent jobs (default 4); a burst of uploads queues rather than fanning out
 over the threadpool. Measured on a laptop: ~0.12 s per PDF analysis, 40
 parallel uploads complete in ~5 s with no errors.
 
-Run exactly **one** uvicorn worker/replica: result tokens, upload rate limits
-and the admin login lockout live in process memory. A restart invalidates the
-30-minute result/PDF links (the permanent vehicle links are in the database and
-survive). The origin must only be reachable through the proxy
-that sets the trusted client-IP header.
+Run exactly **one** uvicorn worker/replica: the upload and e-mail rate
+limits, the admin login lockout and the daily usage-hash key live in process
+memory. A restart loses nothing visible to members (results are the permanent
+vehicle links in the database). The origin must only be reachable through the
+proxy that sets the trusted client-IP header.
 
 ## Admin users, roles and MFA
 
@@ -396,7 +414,9 @@ the host, for when nobody can log in.
   key is random, lives only in process memory and is replaced at the UTC day
   rollover and on restart, so a stored hash cannot be brute-forced back to an
   IP. No VIN, no report data, no raw IP.
-- Email delivery was deliberately left out (abuse surface).
+- "Send me this result" e-mails the permanent link and the PDF to an address
+  the member types in; the address is used for that one message, never stored,
+  and the feature is rate-limited and can be switched off in Settings.
 - Open: the privacy page does not yet name a controller/contact or a
   retention period; these await the association's decision. The deletion
   routine exists (admin, per VIN).
