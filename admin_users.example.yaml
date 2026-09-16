@@ -1,10 +1,25 @@
-# Users for the admin page (/admin) — form login at /admin/login.
-# Only password hashes are stored. Create a hash with:
+# Bootstrap and rescue users for the admin console (/admin).
+#
+# Admin accounts normally live in the database (table admin_users) and are
+# managed on /admin/users; two-factor authentication (TOTP or passkey) is
+# required for every account. This file matters in two situations only:
+#
+#   1. First start: when the admin_users table is empty, the users listed here
+#      are imported as full admins without MFA (each is asked to set it up on
+#      first login). Later edits to this file do not change imported users.
+#   2. Rescue: a username listed here that does NOT exist in the database can
+#      still log in as a full admin and is then asked to set up MFA, which
+#      creates the database record. Usernames that already exist in the
+#      database are never looked up here, so changing their hash below has no
+#      effect - use /admin/users or scripts/manage_users.py for those.
+#
+# Only password hashes are stored. Create one with:
 #     python3 scripts/hash_password.py
-# and paste it below. The file is read on every request, so changes take
-# effect immediately.
-# In production: /config/admin_users.yaml (bind-mounted)
+# In production: /config/admin_users.yaml (bind-mounted, read on every login).
+# Remove the example user before deploying; it would be imported on a fresh
+# install (its hash matches no password, so it cannot be used, but it clutters
+# the user list).
 
 users:
-  # example user (password "changeme" — do NOT use in production):
+  # example user - do NOT keep this in production:
   example: pbkdf2_sha256$600000$00000000000000000000000000000000$0000000000000000000000000000000000000000000000000000000000000000
