@@ -5,10 +5,12 @@
   <div class="hero-text">
     <h1>{{ t('intro_heading') }}</h1>
     <p class="tagline">{{ t('tagline') }}</p>
-    <p>{{ t('intro_text') }}</p>
-    <p class="membership">{{ t('membership_note') | safe }}</p>
   </div>
 </section>
+<div class="intro prose">
+  <p>{{ t('intro_text') }}</p>
+  <p class="membership">{{ t('membership_note') | safe }}</p>
+</div>
 
 {% if error %}
 <div class="alert error">{{ error }}</div>

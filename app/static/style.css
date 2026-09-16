@@ -108,16 +108,18 @@ footer { background: var(--header); color: #a8a8a8; border-top: 1px solid #2a2a2
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
 /* Front page hero: photo left, text right, as on fiskeroa.com */
-.hero { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); min-height: 380px; margin: -1.5rem 0 1.6rem; background: var(--header); color: #fff; }
+.hero { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); min-height: 220px; margin: -1.5rem 0 1.6rem; background: var(--header); color: #fff; }
 .hero-bleed { width: 100vw; margin-left: calc(50% - 50vw); }
 .hero-photo { background: url("img/foa-hero.webp") center / cover no-repeat; min-height: 100%; }
-.hero-text { padding: 2rem 2.5rem 2rem 2.5rem; align-self: center; max-width: 42rem; }
+.hero-text { padding: 1.4rem 2.5rem 1.6rem; align-self: center; max-width: 42rem; }
 .hero-text h1 { margin: 0 0 0.3rem; }
 .hero-text p { color: #ddd; }
 .hero-text a { color: #fff; }
 .hero-text a:hover { color: var(--accent); }
 .tagline { color: #ddd; font-weight: 300; font-size: 1.25rem; margin: 0 0 0.6rem; }
-.hero-text .membership { margin-bottom: 0; }
+.hero-text .tagline { margin-bottom: 0; }
+.intro { margin: 0 0 1.4rem; }
+.intro p { margin: 0.4rem 0; }
 
 .uploadbox {
   background: var(--surface);
@@ -353,7 +355,7 @@ form.inline { display: inline; }
   button, .button { min-height: 44px; }
   main { padding: 1rem 1rem 2.5rem; }
   .hero { grid-template-columns: 1fr; min-height: 0; margin: -1rem 0 1.2rem; }
-  .hero-photo { min-height: 200px; max-height: 220px; }
+  .hero-photo { min-height: 160px; max-height: 180px; }
   .hero-text { padding: 1.2rem 1rem 1.4rem; }
   .tagline { font-size: 1.1rem; }
   .uploadbox { padding: 1rem; }
