@@ -1,10 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="hero">
-  <h1>{{ t('intro_heading') }}</h1>
-  <p class="tagline">{{ t('tagline') }}</p>
-  <p>{{ t('intro_text') }}</p>
-  <p class="membership">{{ t('membership_note') | safe }}</p>
+<section class="hero hero-bleed">
+  <div class="hero-photo" role="presentation"></div>
+  <div class="hero-text">
+    <h1>{{ t('intro_heading') }}</h1>
+    <p class="tagline">{{ t('tagline') }}</p>
+    <p>{{ t('intro_text') }}</p>
+    <p class="membership">{{ t('membership_note') | safe }}</p>
+  </div>
 </section>
 
 {% if error %}

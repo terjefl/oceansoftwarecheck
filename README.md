@@ -92,7 +92,9 @@ app/
   i18n.py       Language negotiation + JSON dictionaries in app/locales/
   templates/    Jinja2: base/index/result/how/stats/privacy/admin (overview, requirements, settings, analytics, log)/admin_fleet/
                 admin_vehicle/admin_login/pdf
-  static/       style.css and app.js (all page JS; no inline scripts, CSP-enforced),
+  static/       style.css (dark theme after fiskeroa.com, light variant via prefers-color-scheme)
+                and app.js (all page JS; no inline scripts, CSP-enforced), fonts/ (self-hosted
+                Titillium Web, OFL), img/ (FOA logo and hero photo, see img/SOURCES.md), favicon,
                 the two front-page videos (olp-howto-nb/-en.mp4 + posters; nb gets the
                 Norwegian one, every other language the English one) and the dongle photo
 tests/          pytest suite. Fixtures: a real OLP export (olp_report.pdf, unmodified)

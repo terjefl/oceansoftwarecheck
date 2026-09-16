@@ -149,6 +149,7 @@ def _render(request: Request, template: str, context: dict, status_code: int = 2
         template,
         {"lang": lang, "t": translator(lang), "languages": LANGUAGE_NAMES,
          "static_v": STATIC_VERSION, "steps": block(lang, "intro_steps"),
+         "path": request.url.path,  # nav highlighting in base.html / _admin_nav.html
          "role": getattr(request.state, "role", ""), **context},
         status_code=status_code,
     )

@@ -3,19 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#111111">
   <title>{% block title %}{{ t('site_title') }}{% endblock %}</title>
   <link rel="stylesheet" href="/static/style.css?v={{ static_v }}">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐟</text></svg>">
+  <link rel="icon" type="image/png" href="/static/favicon.png">
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 </head>
 <body>
 <header>
   <div class="wrap header-inner">
-    <a class="brand" href="/">🐟 {{ t('site_title') }}</a>
+    <a class="brand" href="/"><img src="/static/img/foa-logo.png" alt="" width="106" height="40"><span>{{ t('site_title') }}</span></a>
     <nav>
-      <a href="/">{{ t('nav_home') }}</a>
-      <a href="/stats">{{ t('nav_stats') }}</a>
-      <a href="/how-it-works">{{ t('nav_how') }}</a>
-      <a href="/privacy">{{ t('nav_privacy') }}</a>
+      <a href="/"{% if path == '/' or path == '/analyze' or path.startswith('/vehicle/') or path.startswith('/result/') %} class="active" aria-current="page"{% endif %}>{{ t('nav_home') }}</a>
+      <a href="/stats"{% if path.startswith('/stats') %} class="active" aria-current="page"{% endif %}>{{ t('nav_stats') }}</a>
+      <a href="/how-it-works"{% if path == '/how-it-works' %} class="active" aria-current="page"{% endif %}>{{ t('nav_how') }}</a>
+      <a href="/privacy"{% if path == '/privacy' %} class="active" aria-current="page"{% endif %}>{{ t('nav_privacy') }}</a>
     </nav>
     <form class="langpicker" method="get" action="">
       <label class="visually-hidden" for="lang">{{ t('lang_label') }}</label>
