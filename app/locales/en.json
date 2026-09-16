@@ -220,7 +220,7 @@
   "module_line_update": "{code} – {label}: is at version {found} ({level} level) and needs to be updated to {needed} ({profile} level)",
   "module_line_below_all": "{code} – {label}: is at version {found} (below the {first} level) and needs to be updated to {needed} ({profile} level)",
   "module_line_unread": "{code} – {label}: {status}. No version could be read, so it counts as below {needed} ({profile} level) until a new scan shows otherwise",
-  "incomplete_report_note": "The report has no readable version for {modules}. That happens when a module does not answer during the scan. Scan again with the car awake before you rely on this result.",
+  "incomplete_report_note": "The report has no readable version for {modules}. That happens when a module does not answer during the scan. Scan again with the car awake (Ready mode) before you rely on this result.",
   "incomplete_suffix": "(based on an incomplete report)",
   "below_level": "below {first}",
   "rec_update_then_marlin": "Update the modules above so that your car meets the minimum 2.2 requirement, then update to Marlin.",

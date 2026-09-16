@@ -220,7 +220,7 @@
   "module_line_update": "{code} – {label}: está en la versión {found} (nivel {level}) y debe actualizarse a {needed} (nivel {profile})",
   "module_line_below_all": "{code} – {label}: está en la versión {found} (por debajo del nivel {first}) y debe actualizarse a {needed} (nivel {profile})",
   "module_line_unread": "{code} – {label}: {status}. No se pudo leer ninguna versión, así que cuenta como inferior a {needed} (nivel {profile}) hasta que un nuevo escaneo muestre otra cosa",
-  "incomplete_report_note": "El informe no tiene una versión legible para {modules}. Ocurre cuando un módulo no responde durante el escaneo. Vuelva a escanear con el coche despierto antes de fiarse de este resultado.",
+  "incomplete_report_note": "El informe no tiene una versión legible para {modules}. Ocurre cuando un módulo no responde durante el escaneo. Vuelva a escanear con el coche despierto (Ready mode) antes de fiarse de este resultado.",
   "incomplete_suffix": "(basado en un informe incompleto)",
   "below_level": "por debajo de {first}",
   "rec_update_then_marlin": "Actualice los módulos de arriba para que su coche cumpla el requisito mínimo de 2.2 y después actualice a Marlin.",

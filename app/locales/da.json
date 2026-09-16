@@ -220,7 +220,7 @@
   "module_line_update": "{code} – {label}: er på version {found} ({level}-niveau) og skal opdateres til {needed} ({profile}-niveau)",
   "module_line_below_all": "{code} – {label}: er på version {found} (under {first}-niveau) og skal opdateres til {needed} ({profile}-niveau)",
   "module_line_unread": "{code} – {label}: {status}. Ingen version kunne læses, så den regnes som under {needed} ({profile}-niveau), indtil en ny scanning viser andet",
-  "incomplete_report_note": "Rapporten mangler læsbar version for {modules}. Det sker, når et modul ikke svarer under scanningen. Scan igen med bilen vågen, før du stoler på dette resultat.",
+  "incomplete_report_note": "Rapporten mangler læsbar version for {modules}. Det sker, når et modul ikke svarer under scanningen. Scan igen med bilen vågen (Ready mode), før du stoler på dette resultat.",
   "incomplete_suffix": "(baseret på en ufuldstændig rapport)",
   "below_level": "under {first}",
   "rec_update_then_marlin": "Opdatér modulerne ovenfor, så bilen opfylder minimumskravet til 2.2, og opdatér derefter til Marlin.",
