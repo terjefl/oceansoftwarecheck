@@ -199,7 +199,6 @@ details.extra summary:hover { text-decoration: underline; }
 .bar { background: var(--primary); height: 100%; }
 .bar-count { text-align: right; font-size: 0.85rem; color: var(--muted); }
 
-.prose { max-width: 68ch; }
 
 .wrap.wide { max-width: 1280px; }
 .yamledit { width: 100%; font-family: var(--mono); font-size: 0.85rem; border: 1px solid var(--border); border-radius: var(--radius); padding: 0.8rem; background: var(--surface-2); color: var(--text); resize: vertical; }
@@ -234,10 +233,8 @@ pre.diff { overflow-x: auto; font-family: var(--mono); font-size: 0.8rem; backgr
 .adminbar a.active { color: var(--accent); font-weight: 600; border-bottom: 2px solid var(--accent); }
 .loginbox { max-width: 32rem; }
 
-.how { max-width: 46rem; }
 .how h2 { margin-top: 1.8rem; font-size: 1.25rem; }
 .how .lead { font-size: 1.08rem; }
-.how .prose { line-height: 1.55; }
 .principles { padding-left: 1.2rem; }
 .principles li { margin: 0.5rem 0; line-height: 1.5; }
 .variantlevels { display: block; font-size: 0.78rem; color: var(--muted); white-space: nowrap; margin-top: 0.15rem; }

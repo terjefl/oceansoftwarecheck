@@ -2,5 +2,7 @@
 {% block title %}{{ t('privacy_title') }} – {{ t('site_title') }}{% endblock %}
 {% block content %}
 <h1>{{ t('privacy_title') }}</h1>
-<p class="prose">{{ t('privacy_text') }}</p>
+{% for p in paragraphs %}
+<p>{{ p }}</p>
+{% endfor %}
 {% endblock %}

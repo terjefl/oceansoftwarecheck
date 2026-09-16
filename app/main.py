@@ -632,7 +632,8 @@ def stats(request: Request):
 
 @app.get("/privacy", response_class=HTMLResponse)
 def privacy(request: Request):
-    return _render(request, "privacy.html", {})
+    lang = negotiate_language(request)
+    return _render(request, "privacy.html", {"paragraphs": block(lang, "privacy_paragraphs")})
 
 
 @app.get("/how-it-works", response_class=HTMLResponse)
