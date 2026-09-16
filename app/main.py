@@ -9,6 +9,7 @@ import hashlib
 import hmac
 import io
 import logging
+import mimetypes
 import os
 import re
 import secrets
@@ -86,6 +87,7 @@ TEXT_TOP_PROFILE = "2.2"
 _USER_VISIBLE_PARSE_DETAILS = {"too_many_pages"}
 
 app = FastAPI(title="Ocean Software Check", docs_url=None, redoc_url=None)
+mimetypes.add_type("font/woff2", ".woff2")  # slim images lack /etc/mime.types; StaticFiles would answer text/plain
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
