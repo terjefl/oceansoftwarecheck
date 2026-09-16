@@ -108,7 +108,7 @@ footer { background: var(--header); color: #a8a8a8; border-top: 1px solid #2a2a2
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
 /* Front page intro */
-.hero { margin: 0 0 1rem; }
+.hero { margin: 1.6rem 0 1.2rem; }
 .hero h1 { margin: 0 0 0.3rem; }
 .tagline { color: var(--muted); font-weight: 300; font-size: 1.25rem; margin: 0 0 0.6rem; }
 .intro { margin: 0 0 1.4rem; }
@@ -347,6 +347,7 @@ form.inline { display: inline; }
   h1 { font-size: 1.6rem; }
   button, .button { min-height: 44px; }
   main { padding: 1rem 1rem 2.5rem; }
+  .hero { margin: 0.8rem 0 1rem; }
   .tagline { font-size: 1.1rem; }
   .uploadbox { padding: 1rem; }
   .uploadbox button[type=submit], .actions .button, .actions button { width: 100%; text-align: center; }
