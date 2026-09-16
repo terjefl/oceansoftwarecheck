@@ -235,7 +235,7 @@ def test_save_writes_and_audits_with_user_ip_and_diff(client):
     )
     assert response.status_code == 200
     assert "Saved" in response.text
-    assert "marlin_modules:" in main.REQUIREMENTS_PATH.read_text() and "HYDRA" in main.REQUIREMENTS_PATH.read_text()  # form save keeps the Marlin package
+    assert "marlin_modules:" in main.REQUIREMENTS_PATH.read_text() and "HYDRA" in main.REQUIREMENTS_PATH.read_text()  # YAML save keeps the Marlin package
     assert 'version: "2026-09-official"' in main.REQUIREMENTS_PATH.read_text()
 
     entries = _updates(main)

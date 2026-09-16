@@ -137,7 +137,7 @@ def test_fleet_statistics_count_outcomes_levels_and_split_cars(tmp_path):
     assert stats["trims"] == [{"trim": "Z", "n": 5}]
     assert stats["countries"] == [{"country": "NO", "n": 5}]
     assert stats["per_week"][0]["uploads"] == 6 and stats["per_week"][0]["vehicles"] == 5
-    # The 2.2 zebra is held back by ESP and both MCUs; the 2.1 zebra by BCM
+    # The 2.2 zebra is held back by ECC, ESP, IBS and both MCUs; the 2.1 zebra by BCM
     assert stats["split"]["zebra_22"]["cars"] == 1
     assert {m["module_id"] for m in stats["split"]["zebra_22"]["modules"]} == {"ECC", "ESP", "IBS", "MCU_F", "MCU_R"}
     assert stats["split"]["zebra_21"] == {"cars": 1, "modules": [{"module_id": "BCM", "n": 1}]}

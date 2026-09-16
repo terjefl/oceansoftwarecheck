@@ -1,6 +1,6 @@
 """Tests against the real OLP format.
 
-Two fixtures of the same real OceanLink Pro report (2026-08-28, a Fisker Ocean
+Fixtures built on one real OceanLink Pro report (2026-08-28, a Fisker Ocean
 One, a real "zebra": everything at 2.1 level except BCM):
 
 - `olp_report.pdf`: the PDF exactly as exported by the OLP app, unmodified
@@ -8,6 +8,9 @@ One, a real "zebra": everything at 2.1 level except BCM):
   exercises the pdfplumber text-extraction step with the app's real layout.
 - `olp_report.txt`: its text extraction with the VIN replaced, used by the
   many tests that mutate module values.
+- `olp_report_21_full.txt`, `olp_report_22_full.txt`, `olp_report_marlin.txt`,
+  `olp_report_marlin_bcm41.txt`: synthetic reference cars derived from it
+  (100% 2.1, full 2.2, on Marlin, on Marlin with BCM 41).
 """
 
 from pathlib import Path

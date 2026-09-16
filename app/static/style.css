@@ -351,7 +351,7 @@ form.inline { display: inline; }
   .langpicker select { padding: 0.3rem 0.3rem; min-height: 36px; font-size: 0.92rem; }
 }
 
-/* Small screens: the newsletter link is opened on phones */
+/* Small screens (phones): stacked layout, full-width upload controls, 44px touch targets */
 @media (max-width: 760px) {
   body { font-size: 16px; }
   h1 { font-size: 1.6rem; }

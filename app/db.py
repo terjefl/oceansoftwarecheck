@@ -131,7 +131,7 @@ CREATE TABLE IF NOT EXISTS settings (
     updated_by TEXT NOT NULL DEFAULT ''
 );
 
--- Prepared for passkeys (WebAuthn); not used yet.
+-- Passkeys (WebAuthn, app/passkeys.py): second factor or passwordless sign-in.
 CREATE TABLE IF NOT EXISTS admin_passkeys (
     credential_id TEXT PRIMARY KEY,
     username TEXT NOT NULL REFERENCES admin_users(username) ON DELETE CASCADE,
@@ -992,7 +992,7 @@ class Database:
     SETTING_DEFAULTS: ClassVar[dict[str, str]] = {
         "workorder_enabled": "1",
         "result_mail_enabled": "1",
-        "smtp_host": "",      # seeded from OSC_SMTP_* at startup (seed_settings)
+        "smtp_host": "",      # smtp_host/smtp_port/mail_from are seeded from OSC_SMTP_HOST/OSC_SMTP_PORT/OSC_MAIL_FROM on first start (seed_settings)
         "smtp_port": "587",
         "mail_from": "",
         "service_partner_url": "https://fiskeroa.com/service/",

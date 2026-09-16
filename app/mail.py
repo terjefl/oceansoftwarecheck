@@ -1,7 +1,7 @@
 """Outgoing e-mail through an SMTP relay (Google Workspace's smtp-relay.gmail.com,
 unauthenticated from a registered IP, STARTTLS). The relay is configured in the
-admin console (settings smtp_host, smtp_port, mail_from); the OSC_SMTP_*
-environment variables only seed those settings on first start. No host = off.
+admin console (settings smtp_host, smtp_port, mail_from); OSC_SMTP_HOST,
+OSC_SMTP_PORT and OSC_MAIL_FROM only seed those settings on first start. No host = off.
 Addresses are used for the one message and never stored."""
 
 from __future__ import annotations

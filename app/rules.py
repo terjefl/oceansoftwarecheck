@@ -142,9 +142,10 @@ class ModuleResult:
     # (missing/empty/unparseable) meets nothing.
     meets: dict[str, bool | None] = field(default_factory=dict)
     # The LOWEST profile whose minimum equals the minimum of the highest
-    # profile the module satisfies. Where two profiles share a minimum (ECC is
-    # 24 on both 2.1 and 2.2) a reading cannot prove the higher one, so it only
-    # counts as evidence of the lower. Drives the "zebra" detection.
+    # profile the module satisfies. Where two profiles share a minimum (BMS is
+    # 21 on every profile, BCM 30 on 2.0 and 2.1) a reading cannot prove the
+    # higher one, so it only counts as evidence of the lower. Drives the
+    # "zebra" detection.
     evidence_level: str | None = None
     # variant-aware levels actually used for this module (profile -> minimum)
     levels: dict[str, int] = field(default_factory=dict)

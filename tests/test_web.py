@@ -57,7 +57,7 @@ def test_upload_stores_submission_file_and_all_module_readings(client):
     )
     assert sub["report_date"].startswith("2026-08-28")
     readings = conn.execute("SELECT * FROM module_readings ORDER BY rowid").fetchall()
-    assert len(readings) == 37  # every ECU block, not only the seven with requirements
+    assert len(readings) == 37  # every ECU block, not only the eight with requirements
     vcu = next(r for r in readings if r["code"] == "VCU")
     assert (vcu["module_id"], vcu["extracted"], vcu["level"], vcu["evidence_level"], vcu["section"]) == (
         "VCU", 21, "2.1", "2.1", "POWERTRAIN"
@@ -495,9 +495,9 @@ def test_heavy_jobs_are_limited():
 
 def test_permanent_vehicle_link(client):
     """Every result page carries a permanent /vehicle/<key> link that shows the
-    car's latest report (evaluated against the current requirements), survives
-    a restart of the in-memory result cache, keeps the same key across uploads
-    of the same VIN, serves a PDF, and rejects unknown keys."""
+    car's latest report (evaluated against the current requirements) straight
+    from the database, keeps the same key across uploads of the same VIN,
+    serves a PDF, and rejects unknown keys."""
     import re
 
     c, _ = client

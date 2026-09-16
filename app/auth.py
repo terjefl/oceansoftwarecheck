@@ -1,12 +1,16 @@
-"""Admin credentials and login lockout for the form-based /admin login.
+"""Admin credentials, login lockout and TOTP helpers for the /admin login.
 
-Users live in a YAML file on the host (bind-mounted, read on every call):
+Admin accounts live in the database (table admin_users: PBKDF2 hash, role
+admin/readonly, TOTP secret; passkeys in admin_passkeys) and are managed on
+/admin/users or with scripts/manage_users.py. Two-factor authentication is
+mandatory. The YAML file (OSC_ADMIN_USERS_PATH, bind-mounted) is read only for
+usernames that are not in the database: it seeds the first start and serves
+as a rescue entrance (such a user is a full admin and must set up MFA):
 
     users:
       terje: pbkdf2_sha256$600000$<salt_hex>$<hash_hex>
-      styremedlem: pbkdf2_sha256$600000$...
 
-Hashes are created with scripts/hash_password.py. Only hashes are stored —
+Hashes are created with scripts/hash_password.py. Only hashes are stored,
 never plaintext. Failed attempts are rate limited per IP AND per username
 (10 per 15 min each). Sessions themselves live in SQLite (see db.py) and are
 managed by the login routes in main.py.
