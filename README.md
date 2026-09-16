@@ -420,3 +420,12 @@ the host, for when nobody can log in.
 - Open: the privacy page does not yet name a controller/contact or a
   retention period; these await the association's decision. The deletion
   routine exists (admin, per VIN).
+
+## License
+
+MIT (see `LICENSE`). The Fisker Owners Association and anyone else may use,
+copy, modify and host the code. The FOA logo in `app/static/img/` and the
+OLP report fixture in `tests/fixtures/` are not covered by the licence:
+the logo belongs to the association, and the report belongs to its owner.
+Titillium Web in `app/static/fonts/` is under the SIL Open Font License
+(`fonts/OFL.txt`).
