@@ -423,8 +423,9 @@ the host, for when nobody can log in.
 
 ## License
 
-MIT (see `LICENSE`). The Fisker Owners Association and anyone else may use,
-copy, modify and host the code. The FOA logo in `app/static/img/` and the
+MIT (see `LICENSE`). The portal was written by Terje Flågan for the Fisker
+Owners Association, and the association may use, copy, modify and host it
+freely, as may anyone else under the same terms. The FOA logo in `app/static/img/` and the
 OLP report fixture in `tests/fixtures/` are not covered by the licence:
 the logo belongs to the association, and the report belongs to its owner.
 Titillium Web in `app/static/fonts/` is under the SIL Open Font License
