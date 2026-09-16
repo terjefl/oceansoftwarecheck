@@ -186,7 +186,7 @@
   ],
   "steps_heading": "Så här analyserar du bilen",
   "intro_steps": [
-    "Anslut den gröna OBD-II-dongeln (Bluetooth 4.0, ansluten till bilens diagnosuttag) till OLP (OceanLink Pro) och starta OLP Diagnostics Mode (ikonen längst ned till vänster). Tryck på Software Version-ikonen och kör Software Version Report (alla ECU:er). Spara PDF-rapporten i en mapp på mobilen (till exempel Filer eller Hämtade filer), eller mejla den till dig själv, öppna mejlet på en dator och spara bilagan i en mapp där. I steg 2 hämtar du filen från den mappen.",
+    "Sätt den gröna OBD-II-dongeln (Bluetooth 4.0) i bilens diagnosuttag, se till att bilen är i Ready mode, anslut till dongeln i OLP (OceanLink Pro) och starta OLP Diagnostics Mode (ikonen längst ned till vänster). Tryck på Software Version-ikonen och kör Software Version Report (alla ECU:er). Spara PDF-rapporten i en mapp på mobilen (till exempel Filer eller Hämtade filer), eller mejla den till dig själv, öppna mejlet på en dator och spara bilagan i en mapp där. I steg 2 hämtar du filen från den mappen.",
     "Tryck på ”Välj fil” nedan och välj OLP-rapporten, antingen i mappen på mobilen eller på datorn du mejlade den till. PDF-filen heter ”ecu_software_report_…”. Kryssa i rutan för att godkänna att VIN och ECU-versioner lagras i föreningens fordonsregister och används för statistik, och tryck Analysera."
   ],
   "video_summary": "Se hur det görs i OLP (video, 1 min)",

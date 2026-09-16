@@ -186,7 +186,7 @@
   ],
   "steps_heading": "Así analiza usted su coche",
   "intro_steps": [
-    "Conecte el dongle OBD-II verde (Bluetooth 4.0) al puerto de diagnóstico del coche, conéctese a él en OLP (OceanLink Pro) e inicie OLP Diagnostics Mode (icono inferior izquierdo). Pulse el icono Software Version y genere el Software Version Report (todas las ECU). Guarde el informe PDF en una carpeta de su móvil (por ejemplo Archivos o Descargas), o envíeselo por correo electrónico, abra el correo en un ordenador y guarde el adjunto en una carpeta. En el paso 2 elegirá el archivo de esa carpeta.",
+    "Conecte el dongle OBD-II verde (Bluetooth 4.0) al puerto de diagnóstico del coche, asegúrese de que el coche está en Ready mode, conéctese al dongle en OLP (OceanLink Pro) e inicie OLP Diagnostics Mode (icono inferior izquierdo). Pulse el icono Software Version y genere el Software Version Report (todas las ECU). Guarde el informe PDF en una carpeta de su móvil (por ejemplo Archivos o Descargas), o envíeselo por correo electrónico, abra el correo en un ordenador y guarde el adjunto en una carpeta. En el paso 2 elegirá el archivo de esa carpeta.",
     "Pulse «Elegir archivo» más abajo y seleccione el informe OLP, ya sea desde esa carpeta de su móvil o desde el ordenador al que se lo envió. El archivo PDF se llama «ecu_software_report_…». Marque la casilla para aceptar que el VIN y las versiones de las ECU se guarden en el registro de vehículos de la asociación y se usen para estadísticas, y pulse Analizar."
   ],
   "video_summary": "Vea cómo se hace en OLP (vídeo, 1 min)",

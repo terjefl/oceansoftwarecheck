@@ -186,7 +186,7 @@
   ],
   "steps_heading": "How to analyze your car",
   "intro_steps": [
-    "Plug the green OBD-II dongle (Bluetooth 4.0) into the car's diagnostic port, connect to it in OLP (OceanLink Pro) and start OLP Diagnostics Mode (lower left icon). Tap the Software Version icon and run the Software Version Report (all ECUs). Save the PDF report to a folder on your phone (for example Files or Downloads), or email it to yourself, open the email on a computer and save the attachment to a folder there. In step 2 you pick the file from that folder.",
+    "Plug the green OBD-II dongle (Bluetooth 4.0) into the car's diagnostic port, make sure the car is in Ready mode, connect to the dongle in OLP (OceanLink Pro) and start OLP Diagnostics Mode (lower left icon). Tap the Software Version icon and run the Software Version Report (all ECUs). Save the PDF report to a folder on your phone (for example Files or Downloads), or email it to yourself, open the email on a computer and save the attachment to a folder there. In step 2 you pick the file from that folder.",
     "Click “Choose file” below and pick the OLP report, either from that folder on your phone or from the computer you emailed it to. The PDF file is called “ecu_software_report_…”. Tick the box to accept that your VIN and ECU versions are stored in the association's vehicle register and used for statistics, and press Analyze."
   ],
   "video_summary": "See how it is done in OLP (video, 1 min)",
