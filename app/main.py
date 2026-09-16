@@ -235,7 +235,7 @@ def healthz():
 # scripts are allowed. Fonts and images are self-hosted under /static.
 _CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
-    "img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; "
+    "img-src 'self'; font-src 'self'; connect-src 'self'; form-action 'self'; "
     "frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
 )
 
