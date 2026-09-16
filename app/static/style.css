@@ -170,6 +170,16 @@ tr.status-ok td { background: transparent; }
 .crit { color: var(--muted); font-size: 0.8rem; }
 details.extra { margin-top: 1rem; }
 details.extra summary { cursor: pointer; font-weight: 600; color: var(--accent); min-height: 44px; display: flex; align-items: center; }
+/* display:flex hides the native disclosure triangle, so draw our own chevron */
+details.extra summary, .howto-video summary { list-style: none; gap: 0.5rem; }
+details.extra summary::-webkit-details-marker, .howto-video summary::-webkit-details-marker { display: none; }
+details.extra summary::before, .howto-video summary::before {
+  content: ""; flex: none; width: 0.55em; height: 0.55em; margin-left: 0.15em;
+  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg); transition: transform 0.15s ease;
+}
+details.extra[open] > summary::before, .howto-video[open] > summary::before { transform: rotate(45deg); }
+details.extra summary:hover { text-decoration: underline; }
 .actions { margin-top: 1.4rem; display: flex; gap: 0.8rem; flex-wrap: wrap; }
 .permalink { margin-top: 1.2rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 0.8rem 1rem; max-width: 640px; }
 .permalink a.mono { display: block; word-break: break-all; margin: 0.3rem 0; }
