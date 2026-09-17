@@ -70,6 +70,11 @@ build. There is no staging. Therefore:
   written for target 2.1 and top 2.2.
 - Doubt never yields "ready": an unrecognised or empty version counts as
   failing. Keep the rule engine pessimistic.
+- Uploads are anonymous and the VIN is the only identity, so the register is
+  protected by structure: a report must look like a complete OLP export
+  (five sections, 30+ control units, every required module present) before
+  it is stored or a link key is handed out (`rules.incompleteness`). An older
+  OLP date than the car's current report is never stored either.
 - Theme: `style.css` is dark with an automatic light variant via
   `prefers-color-scheme`. `pdf.html` and `workorder.html` have their own
   print styling and are untouched by the theme.

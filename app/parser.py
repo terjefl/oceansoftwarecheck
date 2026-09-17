@@ -59,6 +59,14 @@ def clean_value(value: str) -> str:
     return value
 
 MAX_REPORT_BYTES = 15 * 1024 * 1024
+
+# What a complete OLP export looks like: a real one has about 37 control
+# units under these five section headings. A report with fewer, or with a
+# section or a required module missing altogether, is refused before anything
+# is stored (see rules.incompleteness), so a partial export or a hand-made
+# text file cannot become a car's current report.
+MIN_MODULES = 30
+REQUIRED_SECTIONS = ("BODY", "ADAS", "CHASSIS", "INFOTAINMENT", "POWERTRAIN")
 # A real OLP report is a handful of pages. Text extraction is CPU-bound and
 # linear in the amount of text, so a page cap keeps a hostile PDF from tying up
 # a worker thread for minutes.

@@ -19,7 +19,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import ClassVar
 
-from .parser import ModuleReading, ParsedReport, parse_report_date
+from .parser import MIN_MODULES, ModuleReading, ParsedReport, parse_report_date
 from .rules import OUTCOME_MARLIN, Evaluation, RequirementSet, evaluate
 
 SCHEMA = """
@@ -645,7 +645,7 @@ class Database:
         " ON s.vin_hash = m.vin_hash AND s.uploaded_at = m.latest"
     )
 
-    MIN_READINGS = 30  # a real OLP export has ~37 control units; fewer means a partial export
+    MIN_READINGS = MIN_MODULES  # rows from before the completeness check may still have fewer
 
     def fleet_vehicles(self, *, outcome: str = "", trim: str = "", query: str = "",
                        anomalies: bool = False, marlin_gap: str = "") -> list[dict]:

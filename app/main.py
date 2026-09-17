@@ -36,6 +36,7 @@ from .rules import (
     RequirementSet,
     RequirementsValidationError,
     evaluate,
+    incompleteness,
     load_requirements,
     parse_requirements_text,
 )
@@ -337,6 +338,14 @@ async def analyze(request: Request, report: UploadFile):
         return _render(
             request, "index.html", {"error": t("error_parse", reason=reason), "requirements": requirements}, status_code=422
         )
+
+    # A partial export or a hand-made file: refused, nothing stored, no link
+    # key handed out (the register must not be changed by a few typed lines).
+    incomplete = incompleteness(parsed, evaluation)
+    if incomplete:
+        _log_usage(request, lang, "incomplete", consent=False)
+        log.info("Report refused as incomplete: %s", incomplete)
+        return _render(request, "index.html", {"error": t("error_incomplete"), "requirements": requirements}, status_code=422)
 
     # An older OLP export than the car's current report (a wrong file picked
     # by mistake) is analysed but not stored: the vehicle page shows the

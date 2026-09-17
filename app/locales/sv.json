@@ -12,6 +12,7 @@
   "upload_button": "Analysera rapporten",
   "consent_label": "Jag godkänner att bilens VIN och programvaruversionerna för samtliga styrenheter lagras i Fisker Owners Associations fordonsregister och används för statistik. Detta krävs för att tjänsten ska kunna användas.",
   "error_parse": "Filen kunde inte läsas som en OLP-diagnosrapport: {reason}",
+  "error_incomplete": "Rapporten är ofullständig: alla sektioner eller styrenheter som en fullständig OLP-export innehåller hittades inte. Se till att bilen är i Ready-läge, gör en ny export i OLP och ladda upp den. Ingenting har sparats.",
   "error_too_large": "Filen är större än gränsen på 15 MB.",
   "error_rate_limited": "För många uppladdningar på kort tid. Vänta en minut och försök igen.",
   "result_title": "Resultat för VIN {vin}",

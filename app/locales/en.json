@@ -12,6 +12,7 @@
   "upload_button": "Analyze the report",
   "consent_label": "I accept that my car's VIN and the software versions of all its control modules are stored in the Fisker Owners Association's vehicle register and used for statistics. This is required to use the service.",
   "error_parse": "The file could not be read as an OLP diagnostics report: {reason}",
+  "error_incomplete": "The report is incomplete: not every section or control unit that a full OLP export contains was found. Make sure the car is in Ready mode, take a fresh export in OLP and upload that. Nothing was stored.",
   "error_too_large": "The file is larger than the 15 MB limit.",
   "error_rate_limited": "Too many uploads in a short time. Please wait a minute and try again.",
   "result_title": "Result for VIN {vin}",

@@ -12,6 +12,7 @@
   "upload_button": "Bericht analysieren",
   "consent_label": "Ich stimme zu, dass die VIN meines Fahrzeugs und die Softwareversionen aller Steuergeräte im Fahrzeugregister der Fisker Owners Association gespeichert und für Statistiken verwendet werden. Das ist für die Nutzung des Dienstes erforderlich.",
   "error_parse": "Die Datei konnte nicht als OLP-Diagnosebericht gelesen werden: {reason}",
+  "error_incomplete": "Der Bericht ist unvollständig: Nicht alle Abschnitte oder Steuergeräte, die ein vollständiger OLP-Export enthält, wurden gefunden. Stellen Sie sicher, dass das Fahrzeug im Ready-Modus ist, erstellen Sie in OLP einen neuen Export und laden Sie diesen hoch. Es wurde nichts gespeichert.",
   "error_too_large": "Die Datei überschreitet das Limit von 15 MB.",
   "error_rate_limited": "Zu viele Uploads in kurzer Zeit. Bitte warte eine Minute und versuche es erneut.",
   "result_title": "Ergebnis für VIN {vin}",

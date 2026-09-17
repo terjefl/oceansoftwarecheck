@@ -828,3 +828,69 @@ def test_incomplete_report_is_flagged(client):
     # A clean scan of the same car replaces the incomplete one on the permanent link
     clean = c.get(_upload(c, follow_redirects=False).headers["location"] + "?lang=en").text
     assert "incomplete report" not in clean
+
+
+def test_incomplete_or_hand_made_report_is_refused_and_stores_nothing(client):
+    """A report missing a section, with fewer than 30 control units, or
+    without a required module as a block is refused with an explanation:
+    no row, no file, no permanent link key. An empty or NA version in a
+    present block is not incompleteness (that car is stored and flagged).
+    The Sport has no MCU_R, so its absence there is fine."""
+    import re
+
+    c, main = client
+    fixture = FIXTURE.read_bytes()
+    lines = fixture.split(b"\n")
+    ecu = re.compile(rb"^[A-Z][A-Z0-9_]{0,11} - ")
+
+    def _without_block(body: bytes, code: bytes) -> bytes:
+        """The fixture minus one ECU block (its header line and field lines)."""
+        out, skipping = [], False
+        for line in body.split(b"\n"):
+            if ecu.match(line):
+                skipping = line.startswith(code + b" - ")
+            elif not line.strip() or not line.startswith((b"Software", b"Hardware", b"Supplier", b"Bootloader")):
+                skipping = False
+            if not skipping:
+                out.append(line)
+        return b"\n".join(out)
+
+    def _refused(body: bytes) -> None:
+        response = _upload(c, body=body)
+        assert response.status_code == 422 and "The report is incomplete" in response.text
+        assert "/vehicle/" not in response.text
+        assert main.database.stats()["unique_vins"] == 0
+        assert not Path(main.UPLOADS_DIR).exists() or not any(Path(main.UPLOADS_DIR).iterdir())
+
+    # A few typed lines with a known VIN
+    _refused(b"OceanLink Pro\nECU Software Version Report\nDate: 2026-09-01 10:00:00\nVIN: VCF1ZBE20PG099999\n"
+             b"BODY\nBCM - Body Control Module\nSupplier SW Version: BCM395030\n")
+    # The whole POWERTRAIN section cut off (a truncated export)
+    _refused(fixture[:fixture.index(b"POWERTRAIN")])
+    # Every section present but too few control units: keep the first block of each section only
+    kept, seen_in_section = [], 0
+    for line in lines:
+        if ecu.match(line):
+            seen_in_section += 1
+        elif line.strip() and line.strip().isupper() and b" - " not in line:
+            seen_in_section = 0
+        if seen_in_section <= 1:
+            kept.append(line)
+    thin = b"\n".join(kept)
+    assert 5 <= len(re.findall(rb"^[A-Z][A-Z0-9_]{0,11} - ", thin, re.M)) < 30
+    _refused(thin)
+    # All sections and enough units, but the BCM block itself is gone
+    no_bcm = _without_block(fixture, b"BCM")
+    assert b"BCM - " not in no_bcm and no_bcm.count(b" - ") >= 30
+    _refused(no_bcm)
+    assert main.database.usage_stats()["outcomes"].get("incomplete") == 4
+
+    # Not incomplete: a present block with NA (the car is stored, the outcome says so)
+    na = fixture.replace(b"Supplier SW Version: ECC395 24", b"Supplier SW Version: NA")
+    assert _upload(c, body=na, follow_redirects=False).status_code == 303
+    # ...and a Sport (VIN letter S) without the MCU_R block
+    sport = _without_block(fixture, b"MCU_R").replace(b"VIN: VCF1ZBE20PG099999", b"VIN: VCF1SBE20PG099999")
+    assert _upload(c, body=sport, follow_redirects=False).status_code == 303
+    # ...but the same file for a two-motor trim is refused
+    _upload(c, body=_without_block(fixture, b"MCU_R"))
+    assert main.database.stats()["unique_vins"] == 2

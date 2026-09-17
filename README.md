@@ -34,6 +34,13 @@ car's control modules meet the minimum software levels required for the
   permanent link warns when the report is older than 60 days, counted from
   the OLP report date (the upload time when that date is missing, unreadable
   or in the future).
+- Completeness check before anything is stored: a report must carry the five
+  OLP section headings (BODY, ADAS, CHASSIS, INFOTAINMENT, POWERTRAIN), at
+  least 30 control units (a real export has about 37) and every required
+  module as a block (MCU_R excepted on the Sport). Otherwise it is refused
+  with an explanation, nothing is stored and no permanent link is handed out.
+  A present block with an empty or NA version is not incompleteness: that car
+  is stored and its result says the module could not be read.
 - An OLP export dated before the car's current report (a wrong file picked by
   mistake) is analysed but not stored: the vehicle page shows the stored
   report with a note naming both dates. Reports without a readable date

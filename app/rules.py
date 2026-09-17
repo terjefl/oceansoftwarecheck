@@ -473,6 +473,28 @@ def _meets(extracted: int | None, levels: dict[str, int], profiles: list[str]) -
     return out
 
 
+def incompleteness(report: ParsedReport, evaluation: Evaluation) -> str | None:
+    """Why the report cannot be accepted as a complete OLP export, or None.
+    Three structural checks: every section heading present, at least
+    MIN_MODULES control units, and every required module present as a block
+    (a present block with an empty or NA version is fine: that is an ECU that
+    did not answer, which the outcome reports). Modules a trim does not have
+    (MCU_R on the Sport) are not counted as missing, since the evaluation
+    already leaves them out."""
+    from .parser import MIN_MODULES, REQUIRED_SECTIONS
+
+    sections = {m.section for m in report.modules}
+    absent = [name for name in REQUIRED_SECTIONS if name not in sections]
+    if absent:
+        return "section " + ", ".join(absent) + " missing"
+    if len(report.modules) < MIN_MODULES:
+        return f"{len(report.modules)} control units, at least {MIN_MODULES} expected"
+    missing = [r.requirement.id for r in evaluation.results if r.status == MISSING]
+    if missing:
+        return "module " + ", ".join(missing) + " missing"
+    return None
+
+
 TRIM_NAMES = {"Z": "One", "E": "Extreme", "U": "Ultra", "S": "Sport"}
 
 

@@ -12,6 +12,7 @@
   "upload_button": "Analyser le rapport",
   "consent_label": "J'accepte que le VIN de ma voiture et les versions logicielles de tous ses calculateurs soient enregistrés dans le registre des véhicules de la Fisker Owners Association et utilisés à des fins statistiques. C'est obligatoire pour utiliser le service.",
   "error_parse": "Le fichier n'a pas pu être lu comme un rapport de diagnostic OLP : {reason}",
+  "error_incomplete": "Le rapport est incomplet : toutes les sections ou tous les calculateurs qu'un export OLP complet contient n'ont pas été trouvés. Vérifiez que la voiture est en mode Ready, faites un nouvel export dans OLP et envoyez celui-ci. Rien n'a été enregistré.",
   "error_too_large": "Le fichier dépasse la limite de 15 Mo.",
   "error_rate_limited": "Trop de téléversements en peu de temps. Veuillez patienter une minute et réessayer.",
   "result_title": "Résultat pour le VIN {vin}",
