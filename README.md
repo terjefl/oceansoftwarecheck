@@ -31,7 +31,13 @@ car's control modules meet the minimum software levels required for the
   yet (that would need re-evaluation to store it).
 - Repeat uploads of the same VIN show what changed since the previous report
   (outcome and every control unit whose Supplier SW Version differs); the
-  permanent link warns when the report is older than 60 days.
+  permanent link warns when the report is older than 60 days, counted from
+  the OLP report date (the upload time when that date is missing, unreadable
+  or in the future).
+- An OLP export dated before the car's current report (a wrong file picked by
+  mistake) is analysed but not stored: the vehicle page shows the stored
+  report with a note naming both dates. Reports without a readable date
+  cannot be compared and are stored as usual.
 - A checklist PDF for service providers and FOA Advanced Installers
   (`/vehicle/<key>/workorder`): the modules to update in the recommended order
   (below 2.1 first, then below 2.2), current and needed version, the Marlin
@@ -61,7 +67,11 @@ car's control modules meet the minimum software levels required for the
   at processing level, in all languages.
 - An upload identical to the vehicle's latest report (every control unit, all
   four version fields) refreshes that row instead of adding one (`upload_count`
-  keeps the total); the admin console can merge older consecutive duplicates.
+  keeps the total, the report date follows the newer file); the admin console
+  can merge older consecutive duplicates. Every upload also writes a row in
+  `upload_events`, which is what the uploads-over-time series count, so a
+  refreshed row does not move earlier uploads to today. The table is seeded
+  once from the existing rows on first start after the upgrade.
 - Storage is mandatory (association decision, Sep 2026): every analyzed
   report goes into the **vehicle register** – file, VIN, all ECU version
   fields, outcome. Public dashboard (`/stats`, aggregated, no VINs) and an

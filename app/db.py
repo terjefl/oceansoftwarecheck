@@ -19,7 +19,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import ClassVar
 
-from .parser import ModuleReading, ParsedReport
+from .parser import ModuleReading, ParsedReport, parse_report_date
 from .rules import OUTCOME_MARLIN, Evaluation, RequirementSet, evaluate
 
 SCHEMA = """
@@ -41,6 +41,20 @@ CREATE TABLE IF NOT EXISTS submissions (
     upload_count INTEGER NOT NULL DEFAULT 1
 );
 CREATE INDEX IF NOT EXISTS idx_submissions_vin_hash ON submissions(vin_hash);
+
+-- One row per upload event, written whether the upload became a new
+-- submission or refreshed an identical one. The time series read this table,
+-- so a refreshed row moving its uploaded_at never moves earlier uploads.
+-- Seeded once from submissions (one event per row, count = upload_count)
+-- for databases from before the table existed.
+CREATE TABLE IF NOT EXISTS upload_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    submission_id TEXT,
+    vin_hash TEXT NOT NULL,
+    uploaded_at TEXT NOT NULL,
+    count INTEGER NOT NULL DEFAULT 1
+);
+CREATE INDEX IF NOT EXISTS idx_upload_events_at ON upload_events(uploaded_at);
 
 -- One row per ECU block in the report. module_id/status/extracted/level/
 -- evidence_level are the rule engine's view and are rewritten on
@@ -294,6 +308,16 @@ class Database:
             for name, definition in columns:
                 if name not in existing:
                     conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {definition}")
+        # upload_events: seeded from the submissions that exist when the table
+        # is first created. Earlier uploads folded into a row by deduplication
+        # had lost their own timestamps already; they are counted at the
+        # row's timestamp, which is all that is known about them.
+        if (conn.execute("SELECT COUNT(*) AS n FROM upload_events").fetchone()["n"] == 0
+                and conn.execute("SELECT COUNT(*) AS n FROM submissions").fetchone()["n"] > 0):
+            conn.execute(
+                "INSERT INTO upload_events (submission_id, vin_hash, uploaded_at, count)"
+                " SELECT id, vin_hash, uploaded_at, upload_count FROM submissions"
+            )
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
@@ -317,6 +341,7 @@ class Database:
         country: str = "",
     ) -> str:
         submission_id = uuid.uuid4().hex
+        uploaded_at = datetime.now(UTC).isoformat()
         with self._connect() as conn:
             conn.execute(
                 "INSERT INTO submissions (id, vin, vin_hash, uploaded_at, verdict,"
@@ -327,7 +352,7 @@ class Database:
                     submission_id,
                     report.vin.upper(),
                     vin_hash(report.vin),
-                    datetime.now(UTC).isoformat(),
+                    uploaded_at,
                     evaluation.verdict,
                     evaluation.requirements_version,
                     lang,
@@ -342,6 +367,10 @@ class Database:
                 ),
             )
             conn.executemany(_INSERT_READING, _reading_rows(submission_id, evaluation))
+            conn.execute(
+                "INSERT INTO upload_events (submission_id, vin_hash, uploaded_at) VALUES (?, ?, ?)",
+                (submission_id, vin_hash(report.vin), uploaded_at),
+            )
         return submission_id
 
     # --- time series and fleet movement ---------------------------------------
@@ -357,8 +386,8 @@ class Database:
                 counted = {
                     row["period"]: (row["uploads"], row["vehicles"])
                     for row in conn.execute(
-                        f"SELECT strftime('{fmt}', uploaded_at) AS period, SUM(upload_count) AS uploads,"
-                        " COUNT(DISTINCT vin_hash) AS vehicles FROM submissions GROUP BY period"
+                        f"SELECT strftime('{fmt}', uploaded_at) AS period, SUM(count) AS uploads,"
+                        " COUNT(DISTINCT vin_hash) AS vehicles FROM upload_events GROUP BY period"
                     )
                 }
             return [
@@ -373,7 +402,7 @@ class Database:
             if key not in weeks:
                 weeks.append(key)
         with self._connect() as conn:
-            first = conn.execute("SELECT MIN(uploaded_at) AS f FROM submissions").fetchone()["f"]
+            first = conn.execute("SELECT MIN(uploaded_at) AS f FROM upload_events").fetchone()["f"]
         months: list[str] = []
         if first:
             y, m = int(first[:4]), int(first[5:7])
@@ -552,8 +581,28 @@ class Database:
                     )
                     conn.execute("DELETE FROM module_readings WHERE submission_id = ?", (latest["id"],))
                     conn.executemany(_INSERT_READING, _reading_rows(latest["id"], evaluation))
+                    conn.execute(
+                        "INSERT INTO upload_events (submission_id, vin_hash, uploaded_at) VALUES (?, ?, ?)",
+                        (latest["id"], vin_hash(report.vin), datetime.now(UTC).isoformat()),
+                    )
                     return latest["id"], latest["stored_filename"]
         return self.store_submission(report, evaluation, lang, stored_filename, country=country), None
+
+    def newer_report_date(self, vin: str, report_date: str) -> str | None:
+        """The vehicle's latest stored report date when it is later than
+        `report_date`: an older OLP export uploaded by mistake must not become
+        the car's current report. None when either date is missing or
+        unreadable, or the new report is as new or newer."""
+        new = parse_report_date(report_date)
+        if new is None:
+            return None
+        with self._connect() as conn:
+            latest = conn.execute(
+                "SELECT report_date FROM submissions WHERE vin_hash = ? ORDER BY uploaded_at DESC LIMIT 1",
+                (vin_hash(vin),),
+            ).fetchone()
+        stored = parse_report_date(latest["report_date"]) if latest else None
+        return latest["report_date"] if stored and stored > new else None
 
     def merge_duplicate_submissions(self) -> tuple[int, list[str]]:
         """One-off clean-up: for every vehicle, consecutive uploads with the
@@ -578,6 +627,8 @@ class Database:
                                            (previous[2],)).fetchone()
                     conn.execute("UPDATE submissions SET upload_count = upload_count + ? WHERE id = ?",
                                  (earlier["upload_count"], sub["id"]))
+                    conn.execute("UPDATE upload_events SET submission_id = ? WHERE submission_id = ?",
+                                 (sub["id"], previous[2]))
                     conn.execute("DELETE FROM submissions WHERE id = ?", (previous[2],))
                     removed += 1
                     if earlier["stored_filename"]:
@@ -779,6 +830,7 @@ class Database:
                 if row["stored_filename"]
             ]
             conn.execute("DELETE FROM submissions WHERE vin_hash = ?", (vin_hash(vin),))
+            conn.execute("DELETE FROM upload_events WHERE vin_hash = ?", (vin_hash(vin),))
             conn.execute("DELETE FROM vehicle_links WHERE vin_hash = ?", (vin_hash(vin),))
         return files
 
@@ -1165,9 +1217,9 @@ class Database:
             per_week = [
                 dict(row)
                 for row in conn.execute(
-                    "SELECT strftime('%Y-W%W', uploaded_at) AS week, SUM(upload_count) AS uploads,"
+                    "SELECT strftime('%Y-W%W', uploaded_at) AS week, SUM(count) AS uploads,"
                     " COUNT(DISTINCT vin_hash) AS vehicles"
-                    " FROM submissions GROUP BY week ORDER BY week DESC LIMIT 26"
+                    " FROM upload_events GROUP BY week ORDER BY week DESC LIMIT 26"
                 )
             ]
             # Every control unit in the latest reports (requirements or not),

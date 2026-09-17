@@ -74,6 +74,9 @@ def test_old_database_is_migrated_and_backfilled_by_reevaluation(tmp_path):
     # Opening again is a no-op (idempotent migration), and the data survives
     Database(path)
     assert db.stats()["unique_vins"] == 1
+    # upload_events was seeded from the existing rows, once
+    conn = sqlite3.connect(path)
+    assert tuple(conn.execute("SELECT COUNT(*), SUM(count) FROM upload_events").fetchone()) == (1, 1)
 
 
 def test_reevaluation_applies_changed_requirements(tmp_path):
@@ -109,7 +112,64 @@ def test_delete_vehicle_removes_every_submission_and_names_the_files(tmp_path):
     assert (stats["unique_vins"], stats["total_submissions"]) == (1, 1)
     conn = sqlite3.connect(db.path)
     assert conn.execute("SELECT COUNT(*) FROM module_readings").fetchone()[0] == 37
+    assert conn.execute("SELECT COUNT(*) FROM upload_events").fetchone()[0] == 1  # the deleted car's events went too
     assert db.delete_vehicle("VCF1ZBE20PG000000") == []
+
+
+def test_upload_events_keep_their_dates_through_dedup_and_merge(tmp_path):
+    """The time series count upload events, not submission rows: an identical
+    re-upload refreshes the row's timestamp but earlier uploads stay on the
+    day they happened, and merging duplicates in the admin console keeps
+    every event. Seeding an existing database counts each row's upload_count
+    at the row's timestamp (older per-upload times are not known)."""
+    from datetime import UTC, datetime, timedelta
+
+    db = Database(tmp_path / "m.sqlite3")
+    requirements = load_requirements(REQUIREMENTS)
+    report = parse_report((FIXTURES / "olp_report_21_full.txt").read_bytes(), "x")
+    evaluation = evaluate(report, requirements)
+    ten_days_ago = (datetime.now(UTC) - timedelta(days=10)).isoformat()
+
+    sid, _ = db.store_upload(report, evaluation, "en", "a.txt")
+    with db._connect() as conn:  # the first upload happened ten days ago
+        conn.execute("UPDATE submissions SET uploaded_at = ? WHERE id = ?", (ten_days_ago, sid))
+        conn.execute("UPDATE upload_events SET uploaded_at = ? WHERE submission_id = ?", (ten_days_ago, sid))
+    same, replaced = db.store_upload(report, evaluation, "en", "b.txt")
+    assert same == sid and replaced == "a.txt"
+    days = db.uploads_over_time()["day"]
+    assert days[-11]["uploads"] == 1 and days[-1]["uploads"] == 1  # ten days ago and today, not 2 today
+    assert sum(d["uploads"] for d in days) == 2 and db.stats()["total_submissions"] == 2
+
+    # Two rows with the same report (from before dedup) merged in the admin
+    # console: the earlier row's event follows the surviving row.
+    other = db.store_submission(report, evaluation, "en", "c.txt")
+    with db._connect() as conn:
+        conn.execute("UPDATE submissions SET uploaded_at = ? WHERE id = ?", ((datetime.now(UTC) + timedelta(seconds=1)).isoformat(), other))
+    assert db.merge_duplicate_submissions() == (1, ["b.txt"])
+    with db._connect() as conn:
+        events = conn.execute("SELECT submission_id, uploaded_at FROM upload_events ORDER BY uploaded_at").fetchall()
+    assert [e["submission_id"] for e in events] == [other] * 3 and events[0]["uploaded_at"] == ten_days_ago
+    assert sum(d["uploads"] for d in db.uploads_over_time()["day"]) == 3
+
+    # A database from before the table: seeded once, then left alone
+    with db._connect() as conn:
+        conn.execute("DROP TABLE upload_events")
+    seeded = Database(db.path)
+    with seeded._connect() as conn:
+        assert tuple(conn.execute("SELECT COUNT(*), SUM(count) FROM upload_events").fetchone()) == (1, 3)
+    Database(db.path)
+    with seeded._connect() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM upload_events").fetchone()[0] == 1
+
+
+def test_older_report_is_detected_by_report_date():
+    """An OLP export dated before the car's current report must not become
+    the current one; without readable dates nothing can be said."""
+    from app.parser import parse_report_date
+
+    assert parse_report_date("2026-08-28 18:15:16.564271").year == 2026
+    assert parse_report_date("") is None and parse_report_date("yesterday") is None
+    assert parse_report_date("2026-08-28 18:15:16.564271").tzinfo is not None
 
 
 def test_fleet_statistics_count_outcomes_levels_and_split_cars(tmp_path):
@@ -168,6 +228,7 @@ def test_time_series_and_fleet_movement(tmp_path):
         when = (datetime.now(UTC) - timedelta(days=days_ago)).isoformat()
         with db._connect() as conn:  # backdate: store_submission stamps "now"
             conn.execute("UPDATE submissions SET uploaded_at = ? WHERE id = ?", (when, sid))
+            conn.execute("UPDATE upload_events SET uploaded_at = ? WHERE submission_id = ?", (when, sid))
 
     # Car 01: clean 2.1 (40 days ago) -> full 2.2 (2 days ago): BCM, ESP, IBS, MCUs, VCU lifted
     _store("olp_report_21_full.txt", "01", 40)

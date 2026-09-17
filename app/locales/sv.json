@@ -106,6 +106,7 @@
   "changes_outcome": "Resultat: {before} → {after}",
   "changes_module": "{code}: {before} → {after}",
   "report_age_note": "Den här rapporten är {days} dagar gammal. Ladda upp en ny efter verkstadsbesök, så visar resultatet bilen som den är nu.",
+  "older_report_note": "Filen du laddade upp är en äldre rapport ({uploaded}) än den som redan är sparad för den här bilen ({stored}). Den sparade rapporten visas, och ingenting har ändrats. Om bilen har uppdaterats sedan dess, ta en ny export i OLP och ladda upp den.",
   "verdict_marlin": "Redan på Marlin",
   "verdict_marlin_text": "Din bil är på Marlin (VCU 2.4 eller senare). Fisker Owners Association rekommenderar att alla moduler också lyfts till 2.2-nivå, så att bilen ligger på rekommenderad nivå. Moduler som fortfarande ligger under 2.2 listas nedan, och även om alla moduler som Marlin-uppdateringen installerar är på plats.",
   "marlin_below_top_note": "Marlin uppdaterar inte alla moduler. Följande moduler rekommenderas att uppdateras för att uppfylla minimikraven för {profile}.",

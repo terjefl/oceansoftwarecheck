@@ -22,8 +22,20 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 
 VIN_RE = re.compile(r"^VIN:\s*([A-HJ-NPR-Z0-9]{17})\s*$", re.MULTILINE)
+def parse_report_date(text: str) -> datetime | None:
+    """The OLP "Date:" line as an aware datetime, or None when it is missing
+    or not a date. OLP writes the laptop's local time without a zone; it is
+    taken as UTC, which is close enough for ages in days and for ordering."""
+    try:
+        parsed = datetime.fromisoformat(str(text).strip())
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+
+
 DATE_RE = re.compile(r"^Date:\s*(.+)$", re.MULTILINE)
 # Section headings are short all-uppercase lines (BODY, ADAS, ...)
 SECTION_RE = re.compile(r"^[A-Z][A-Z ]{2,24}$")

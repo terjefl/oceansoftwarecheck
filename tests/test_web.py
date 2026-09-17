@@ -1,7 +1,7 @@
 """End-to-end tests of the web flow, including the mandatory-storage rule."""
 
 import importlib
-from datetime import UTC
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -21,6 +21,14 @@ def client(tmp_path, monkeypatch):
 
 
 CONSENT = {"consent": "yes"}
+FIXTURE_DATE = b"Date: 2026-08-28 18:15:16.564271"
+
+
+def _dated(days_ago: int = 0, body: bytes | None = None) -> bytes:
+    """The fixture with its OLP date moved to `days_ago` days before now, so
+    tests do not depend on how old the fixture's real date has become."""
+    when = (datetime.now(UTC) - timedelta(days=days_ago)).strftime("%Y-%m-%d %H:%M:%S.%f").encode()
+    return (body if body is not None else FIXTURE.read_bytes()).replace(FIXTURE_DATE, b"Date: " + when)
 
 
 def _upload(client, consent: bool = True, body: bytes | None = None, **kwargs):
@@ -613,10 +621,65 @@ def test_changes_since_previous_report_and_report_age(client):
     key = re.search(r"/vehicle/([A-Za-z0-9_-]{16,})", page).group(1)
     vehicle = c.get(f"/vehicle/{key}").text
     assert "Since your previous report" in vehicle and "days old" not in vehicle
-    with main.database._connect() as conn:
-        conn.execute("UPDATE submissions SET uploaded_at = '2026-01-01T10:00:00+00:00' WHERE vin = ?", ("VCF1ZBE20PG099999",))
-    vehicle = c.get(f"/vehicle/{key}").text
-    assert re.search(r"This report is \d+ days old", vehicle)
+
+    # The age is the OLP report date's, not the upload's: a 100 day old
+    # export is 100 days old however recently it was uploaded. Without a
+    # readable report date (or with one in the future, from a wrong laptop
+    # clock) the upload time is used instead.
+    # Checked on a car with a single stored report, so backdating the row
+    # cannot make another row the car's latest.
+    single = _upload(c, body=_dated(0).replace(b"VCF1ZBE20PG099999", b"VCF1ZBE20PG099998"), follow_redirects=False)
+    key = single.headers["location"].rsplit("/", 1)[1]
+
+    def _set(report_date: str, uploaded_at: str) -> str:
+        with main.database._connect() as conn:
+            conn.execute("UPDATE submissions SET report_date = ?, uploaded_at = ? WHERE vin = ?",
+                         (report_date, uploaded_at, "VCF1ZBE20PG099998"))
+        return c.get(f"/vehicle/{key}").text
+
+    now = datetime.now(UTC).isoformat()
+    hundred = (datetime.now(UTC) - timedelta(days=100)).strftime("%Y-%m-%d %H:%M:%S.%f")
+    assert "This report is 100 days old" in _set(hundred, now)
+    assert "days old" not in _set("", now)
+    assert re.search(r"This report is \d+ days old", _set("", "2026-01-01T10:00:00+00:00"))
+    assert re.search(r"This report is \d+ days old", _set("not a date", "2026-01-01T10:00:00+00:00"))
+    assert "days old" not in _set("2099-01-01 10:00:00.000000", now)
+    assert re.search(r"This report is \d+ days old", _set("2026-01-01 10:00:00.000000", now))
+
+
+def test_older_report_does_not_replace_the_current_one(client):
+    """A wrong file picked by mistake, an OLP export older than the car's
+    current report, is analysed but not stored: the vehicle page shows the
+    stored report with a note naming both dates, the register and the files
+    are untouched. A report dated the same or later is stored as usual, and
+    reports without a readable date cannot be compared and are stored."""
+    c, main = client
+    _upload(c, body=_dated(1))
+    files_before = set(Path(main.UPLOADS_DIR).iterdir())
+    older = _dated(30, FIXTURE.read_bytes().replace(b"BCM395021", b"BCM395030"))
+    response = _upload(c, body=older, follow_redirects=False)
+    assert response.status_code == 303 and "?older=" in response.headers["location"]
+    page = c.get(response.headers["location"]).text
+    assert "is an older report (" in page and "The stored report is shown" in page
+    assert "BCM395021" in page and "BCM395030" not in page  # the stored report, not the older file
+    assert "Since your previous report" not in page
+    history = main.database.vehicle_history("VCF1ZBE20PG099999")
+    assert len(history) == 1 and history[0]["upload_count"] == 1
+    assert set(Path(main.UPLOADS_DIR).iterdir()) == files_before
+    assert main.database.usage_stats()["outcomes"].get("older_report") == 1  # counted as usage, not as a report
+
+    # The note comes from the query string, which is validated: junk is ignored
+    key = response.headers["location"].split("/vehicle/")[1].split("?")[0]
+    assert "older report" not in c.get(f"/vehicle/{key}?older=<script>").text
+
+    # Same date: stored (a new reading of the same day), later date: stored
+    assert len(main.database.vehicle_history("VCF1ZBE20PG099999")) == 1
+    _upload(c, body=_dated(0, FIXTURE.read_bytes().replace(b"BCM395021", b"BCM395030")))
+    assert len(main.database.vehicle_history("VCF1ZBE20PG099999")) == 2
+    undated = _dated(0).replace(b"Date: ", b"Was: ")
+    assert b"Date:" not in undated
+    _upload(c, body=undated)
+    assert len(main.database.vehicle_history("VCF1ZBE20PG099999")) == 3
 
 
 def test_work_order_pdf_lists_modules_in_order(client):
@@ -646,9 +709,9 @@ def test_identical_reupload_is_merged_and_counted(client):
     instead of adding one: one row, upload_count 2, the old file gone, totals
     still counting every upload. A different report adds a row."""
     c, main = client
-    _upload(c)
+    _upload(c, body=_dated(2))
     first_files = set(Path(main.UPLOADS_DIR).iterdir())
-    _upload(c)
+    _upload(c, body=_dated(2))
     history = main.database.vehicle_history("VCF1ZBE20PG099999")
     assert len(history) == 1 and history[0]["upload_count"] == 2
     files = set(Path(main.UPLOADS_DIR).iterdir())
@@ -657,12 +720,12 @@ def test_identical_reupload_is_merged_and_counted(client):
     assert stats["total_submissions"] == 2 and stats["unique_vins"] == 1
     # A new OLP reading with the same versions is still merged, but the row
     # follows the file: the report date is the newer reading's.
-    assert history[0]["report_date"] == "2026-08-28 18:15:16.564271"
-    _upload(c, body=FIXTURE.read_bytes().replace(b"Date: 2026-08-28 18:15:16.564271", b"Date: 2026-09-17 12:00:00.000000"))
+    first_date = history[0]["report_date"]
+    _upload(c, body=_dated(1))
     history = main.database.vehicle_history("VCF1ZBE20PG099999")
     assert len(history) == 1 and history[0]["upload_count"] == 3
-    assert history[0]["report_date"] == "2026-09-17 12:00:00.000000"
-    _upload(c, body=FIXTURE.read_bytes().replace(b"BCM395021", b"BCM395030"))
+    assert history[0]["report_date"] > first_date
+    _upload(c, body=_dated(0, FIXTURE.read_bytes().replace(b"BCM395021", b"BCM395030")))
     history = main.database.vehicle_history("VCF1ZBE20PG099999")
     assert len(history) == 2 and history[0]["upload_count"] == 1 and history[1]["upload_count"] == 3
     assert main.database.fleet_vehicles()[0]["uploads"] == 4

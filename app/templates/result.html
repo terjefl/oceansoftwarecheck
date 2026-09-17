@@ -4,6 +4,7 @@
 {% include "_result_body.html" %}
 {% if uploaded_at %}<p class="meta">{{ t('latest_report_note', date=uploaded_at) }}</p>{% endif %}
 {% if report_age_days is not none and report_age_days >= 60 %}<div class="alert">{{ t('report_age_note', days=report_age_days) }}</div>{% endif %}
+{% if older_report %}<div class="alert">{{ t('older_report_note', uploaded=older_report.uploaded, stored=older_report.stored) }}</div>{% endif %}
 {% if changes %}
 <div class="changes">
   {% set date = changes.previous_at[:16].replace('T', ' ') %}

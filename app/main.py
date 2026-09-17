@@ -14,7 +14,7 @@ import os
 import re
 import secrets
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote
 
@@ -29,7 +29,7 @@ from . import db as db_module
 from .auth import LoginRequired, client_ip
 from .config import env
 from .i18n import LANGUAGE_NAMES, SUPPORTED, block, negotiate_language, translator
-from .parser import MAX_REPORT_BYTES, ReportParseError, parse_report
+from .parser import MAX_REPORT_BYTES, ReportParseError, parse_report, parse_report_date
 from .rules import (
     OUTCOMES,
     TRIM_NAMES,
@@ -338,6 +338,15 @@ async def analyze(request: Request, report: UploadFile):
             request, "index.html", {"error": t("error_parse", reason=reason), "requirements": requirements}, status_code=422
         )
 
+    # An older OLP export than the car's current report (a wrong file picked
+    # by mistake) is analysed but not stored: the vehicle page shows the
+    # stored report with a note about the older file.
+    newer = database.newer_report_date(parsed.vin, str(parsed.meta.get("report_date", "")))
+    if newer:
+        _log_usage(request, lang, "older_report", consent=True)
+        older = str(parsed.meta.get("report_date", ""))[:16]
+        return RedirectResponse(f"/vehicle/{database.link_key_for(parsed.vin)}?older={quote(older)}", status_code=303)
+
     # Storage is mandatory (association decision, Sep 2026): the file and the
     # full module list go into the vehicle register.
     UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
@@ -402,7 +411,8 @@ def _same_origin_json(request: Request) -> None:
 
 
 def _result_page(request: Request, report, evaluation, *, pdf_url: str, link_key: str,
-                 uploaded_at: str = "", changes: dict | None = None, report_age_days: int | None = None) -> Response:
+                 uploaded_at: str = "", changes: dict | None = None, report_age_days: int | None = None,
+                 older_report: dict | None = None) -> Response:
     response = _render(
         request,
         "result.html",
@@ -410,6 +420,7 @@ def _result_page(request: Request, report, evaluation, *, pdf_url: str, link_key
             "report": report, "evaluation": evaluation, "pdf_url": pdf_url,
             "permanent_url": _permanent_url(request, link_key),
             "uploaded_at": uploaded_at, "changes": changes, "report_age_days": report_age_days,
+            "older_report": older_report,
             "workorder_enabled": database.flag("workorder_enabled"),
             "service_url": database.get_setting("service_partner_url"),
             "mail_enabled": _relay().enabled and database.flag("result_mail_enabled"),
@@ -534,14 +545,30 @@ def vehicle_page(request: Request, key: str):
     if found is None:
         return _unknown_vehicle_link(request)
     report, evaluation, submission = found
-    try:
-        age_days = (datetime.now(UTC) - datetime.fromisoformat(submission["uploaded_at"])).days
-    except ValueError:
-        age_days = None
+    older = request.query_params.get("older", "")
     return _result_page(request, report, evaluation, pdf_url=f"/vehicle/{key}/pdf",
                         link_key=key, uploaded_at=submission["uploaded_at"][:16].replace("T", " "),
                         changes=database.changes_since_previous(report.vin, submission["id"]),
-                        report_age_days=age_days)
+                        report_age_days=_report_age_days(submission),
+                        older_report={"uploaded": older, "stored": submission["report_date"][:16]}
+                        if _REPORT_DATE_PARAM_RE.fullmatch(older) else None)
+
+
+_REPORT_DATE_PARAM_RE = re.compile(r"^\d{4}-\d{2}-\d{2}( \d{2}:\d{2})?$")
+
+
+def _report_age_days(submission) -> int | None:
+    """How old the car's current report is: from the OLP report date when it
+    is readable and not in the future (a wrong laptop clock), else from the
+    upload time. None when neither can be read."""
+    now = datetime.now(UTC)
+    taken = parse_report_date(submission["report_date"])
+    if taken is None or taken > now + timedelta(days=1):
+        try:
+            taken = datetime.fromisoformat(submission["uploaded_at"])
+        except ValueError:
+            return None
+    return (now - taken).days
 
 
 @app.get("/vehicle/{key}/pdf")
