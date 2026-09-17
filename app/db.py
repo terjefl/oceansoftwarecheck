@@ -525,9 +525,9 @@ class Database:
     def store_upload(self, report: ParsedReport, evaluation: Evaluation, lang: str,
                      stored_filename: str | None, country: str = "") -> tuple[str, str | None]:
         """Stores an upload, unless it is identical to the vehicle's latest
-        report: then that row is refreshed instead (new timestamp, file,
-        language and country; upload_count + 1; outcome re-stored in case the
-        requirements changed). Returns (submission id, replaced file name or
+        report: then that row is refreshed instead (new timestamp, report
+        date, file, language and country; upload_count + 1; outcome re-stored
+        in case the requirements changed). Returns (submission id, replaced file name or
         None); the caller removes the replaced file."""
         with self._connect() as conn:
             latest = conn.execute(
@@ -541,11 +541,12 @@ class Database:
                 ).fetchall()
                 if _rows_signature(rows) == _report_signature(report):
                     conn.execute(
-                        "UPDATE submissions SET uploaded_at = ?, lang = ?, stored_filename = ?, country = ?,"
-                        " upload_count = upload_count + 1, verdict = ?, requirements_version = ?, trim = ?,"
-                        " outcome = ?, complete_profile = ?, top_evidence = ?, marlin_missing = ? WHERE id = ?",
-                        (datetime.now(UTC).isoformat(), lang, stored_filename, country[:8],
-                         evaluation.verdict, evaluation.requirements_version, evaluation.trim,
+                        "UPDATE submissions SET uploaded_at = ?, report_date = ?, lang = ?, stored_filename = ?,"
+                        " country = ?, upload_count = upload_count + 1, verdict = ?, requirements_version = ?,"
+                        " trim = ?, outcome = ?, complete_profile = ?, top_evidence = ?, marlin_missing = ?"
+                        " WHERE id = ?",
+                        (datetime.now(UTC).isoformat(), str(report.meta.get("report_date", ""))[:32], lang,
+                         stored_filename, country[:8], evaluation.verdict, evaluation.requirements_version, evaluation.trim,
                          evaluation.outcome, evaluation.complete_profile, evaluation.top_evidence,
                          _marlin_missing(evaluation), latest["id"]),
                     )
@@ -936,15 +937,6 @@ class Database:
                          (_token_hash(token),))
         return row["webauthn_challenge"] if row else None
 
-    def session_promote(self, token: str, username: str) -> None:
-        """A passwordless passkey login: the anonymous pending session becomes
-        a full session for `username`."""
-        with self._connect() as conn:
-            conn.execute(
-                "UPDATE admin_sessions SET username = ?, mfa_pending = 0, mfa_setup_required = 0"
-                " WHERE token_hash = ?",
-                (username, _token_hash(token)),
-            )
 
     # --- passkeys (WebAuthn) -------------------------------------------------
 

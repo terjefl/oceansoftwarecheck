@@ -348,11 +348,18 @@ async def analyze(request: Request, report: UploadFile):
         f"{datetime.now(UTC).strftime('%Y%m%dT%H%M%S%fZ')}"
         f"_{re.sub(r'[^A-Z0-9]', '', parsed.vin.upper())}_{secrets.token_hex(3)}{safe_ext}"
     )
-    (UPLOADS_DIR / stored_filename).write_bytes(data)
-    _submission_id, replaced_file = database.store_upload(
-        parsed, evaluation, lang, stored_filename,
-        country=request.headers.get("cf-ipcountry", "").upper(),
-    )
+    stored_path = UPLOADS_DIR / stored_filename
+    stored_path.write_bytes(data)
+    try:
+        _submission_id, replaced_file = database.store_upload(
+            parsed, evaluation, lang, stored_filename,
+            country=request.headers.get("cf-ipcountry", "").upper(),
+        )
+    except Exception:
+        # No row, no file: an orphaned upload would otherwise sit in the
+        # uploads directory with nobody able to find or delete it.
+        stored_path.unlink(missing_ok=True)
+        raise
     if replaced_file and replaced_file != stored_filename:
         # Same report as the vehicle's latest: the row was refreshed, the old file is redundant
         (UPLOADS_DIR / Path(replaced_file).name).unlink(missing_ok=True)
@@ -900,10 +907,20 @@ async def admin_login_passkey_verify(request: Request):
     if session["username"]:
         database.session_mfa_done(token)
     else:
-        database.session_promote(token, username)
+        # Passwordless: the anonymous pending session (10 min cookie) is
+        # replaced by a fresh full session, so the token rotates on login.
+        database.delete_session(token)
+        token, _csrf = database.create_session(username)
     database.record_login(username)
     database.add_audit(username, ip, "login", f"passkey ok ({passkey['name']})")
-    return JSONResponse({"ok": True, "next": _safe_next(str(body.get("next", "")))})
+    response = JSONResponse({"ok": True, "next": _safe_next(str(body.get("next", "")))})
+    # The pending cookie carried MFA_PENDING_SECONDS; the signed-in session
+    # gets the ordinary lifetime, otherwise the browser drops it after 10 min.
+    response.set_cookie(
+        auth.SESSION_COOKIE, token, max_age=auth.SESSION_MAX_SECONDS, path="/admin",
+        httponly=True, secure=COOKIE_SECURE, samesite="lax",
+    )
+    return response
 
 
 @app.post("/admin/logout")

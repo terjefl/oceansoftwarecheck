@@ -768,8 +768,15 @@ def test_passkey_registration_second_factor_and_passwordless_login(client, monke
     opts = other.post("/admin/login/passkey/options", json={}, headers={"Sec-Fetch-Site": "same-origin"})
     assert opts.status_code == 200 and "osc_admin=" in opts.headers["set-cookie"] and not opts.json().get("allowCredentials")
     assert other.get("/admin", follow_redirects=False).status_code == 303  # still only pending
+    pending_token = other.cookies.get("osc_admin")
     result = other.post("/admin/login/passkey/verify", json={"credential": {"id": "cred-one"}}, headers={"Sec-Fetch-Site": "same-origin"})
     assert result.status_code == 200 and result.json()["next"] == "/admin"
+    # The pending cookie lived 10 min; the signed-in session gets the ordinary
+    # lifetime and a rotated token, and the pending session is gone.
+    cookie = result.headers["set-cookie"].lower()
+    assert "osc_admin=" in cookie and f"max-age={main.auth.SESSION_MAX_SECONDS}" in cookie and "path=/admin" in cookie
+    assert other.cookies.get("osc_admin") != pending_token
+    assert main.database.get_session(pending_token, idle_seconds=3600, max_age_seconds=3600) is None
     page = other.get("/admin")
     assert page.status_code == 200 and "terje" in page.text
     assert any(e["action"] == "login" and "passkey ok" in e["detail"] for e in main.database.audit_entries())

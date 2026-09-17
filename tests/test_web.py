@@ -655,10 +655,38 @@ def test_identical_reupload_is_merged_and_counted(client):
     assert len(files) == 1 and files != first_files  # the newer file replaced the older
     stats = main.database.stats()
     assert stats["total_submissions"] == 2 and stats["unique_vins"] == 1
+    # A new OLP reading with the same versions is still merged, but the row
+    # follows the file: the report date is the newer reading's.
+    assert history[0]["report_date"] == "2026-08-28 18:15:16.564271"
+    _upload(c, body=FIXTURE.read_bytes().replace(b"Date: 2026-08-28 18:15:16.564271", b"Date: 2026-09-17 12:00:00.000000"))
+    history = main.database.vehicle_history("VCF1ZBE20PG099999")
+    assert len(history) == 1 and history[0]["upload_count"] == 3
+    assert history[0]["report_date"] == "2026-09-17 12:00:00.000000"
     _upload(c, body=FIXTURE.read_bytes().replace(b"BCM395021", b"BCM395030"))
     history = main.database.vehicle_history("VCF1ZBE20PG099999")
-    assert len(history) == 2 and history[0]["upload_count"] == 1 and history[1]["upload_count"] == 2
-    assert main.database.fleet_vehicles()[0]["uploads"] == 3
+    assert len(history) == 2 and history[0]["upload_count"] == 1 and history[1]["upload_count"] == 3
+    assert main.database.fleet_vehicles()[0]["uploads"] == 4
+
+
+def test_failed_database_write_leaves_no_orphaned_file(client, monkeypatch):
+    """The file is written before the database row. If the row cannot be
+    written, the file is removed again: nothing in the uploads directory
+    without a submission to find it by."""
+    _c, main = client
+
+    def boom(*_args, **_kwargs):
+        raise RuntimeError("database unavailable")
+
+    monkeypatch.setattr(main.database, "store_upload", boom)
+    from fastapi.testclient import TestClient
+
+    lenient = TestClient(main.app, raise_server_exceptions=False)
+    assert lenient.post(
+        "/analyze", files={"report": ("report.txt", FIXTURE.read_bytes(), "text/plain")}, data=CONSENT,
+    ).status_code == 500
+    uploads = Path(main.UPLOADS_DIR)
+    assert not uploads.exists() or not any(uploads.iterdir())
+    assert main.database.vehicle_history("VCF1ZBE20PG099999") == []
 
 
 def test_front_page_links_to_the_association(client):
